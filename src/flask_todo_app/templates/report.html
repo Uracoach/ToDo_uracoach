@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ student.name }}さん {{ month_str }} 学習レポート</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; }
+        .report-container { width: 90%; margin: auto; }
+        h1, h2 { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2em; margin-bottom: 2em; page-break-inside: avoid; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1em; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .no-print { text-align: center; margin-top: 2em; }
+        /* 印刷時用のスタイル */
+        @media print {
+            .no-print { display: none; }
+            a { text-decoration: none; color: black; }
+        }
+    </style>
+</head>
+<body>
+    <div class="report-container">
+        <h1>{{ month_str }} 学習レポート</h1>
+        <h2>{{ student.name }} さん</h2>
+
+        <div class="summary-grid">
+            <div>
+                <h3>月間サマリー</h3>
+                <p><strong>総学習時間:</strong> {{ total_minutes // 60 }}時間 {{ total_minutes % 60 }}分</p>
+                <p><strong>完了したToDoの数:</strong> {{ month_todos | length }}件</p>
+                <p><strong>レポート作成日:</strong> {{ report_date.strftime('%Y年%m月%d日') }}</p>
+            </div>
+            <div>
+                <h3>教科別学習時間</h3>
+                <ul>
+                    {% for item in subject_totals %}
+                        <li>{{ item.subject }}: {{ item.total_minutes }}分</li>
+                    {% else %}
+                        <li>今月の学習記録はありません。</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <h3>完了したToDo一覧</h3>
+        <table>
+            <thead>
+                <tr><th>日付</th><th>教科</th><th>教材</th><th>実績時間</th></tr>
+            </thead>
+            <tbody>
+                {% for todo in month_todos %}
+                <tr>
+                    <td>{{ todo.date }}</td>
+                    <td>{{ todo.subject }}</td>
+                    <td>{{ todo.material }}</td>
+                    <td>{{ todo.actual_hour }}h {{ todo.actual_min }}m</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4">今月完了したToDoはありません。</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="no-print">
+            <button onclick="window.print()">このレポートを印刷する</button>
+        </div>
+    </div>
+</body>
+</html>

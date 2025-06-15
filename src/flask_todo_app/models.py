@@ -19,3 +19,10 @@ class Todo(db.Model):
     actual_hour = db.Column(db.Integer, default=0)
     actual_min = db.Column(db.Integer, default=0)
     completed = db.Column(db.Boolean, default=False)
+
+class Mission(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    week_start_date = db.Column(db.String(10), nullable=False) # 'YYYY-MM-DD'形式
+    description = db.Column(db.Text, nullable=False)
+    subject_target = db.Column(db.String(50), nullable=True) # 例: '数学'
+    minutes_target = db.Column(db.Integer, nullable=True) # 例: 60

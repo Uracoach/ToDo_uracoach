@@ -2,7 +2,7 @@ from flask import Blueprint, flash, render_template, request, redirect, url_for,
 from datetime import datetime, timedelta, date
 from sqlalchemy import func, case
 from .. import db, hash_password
-from ..models import Student, Todo
+from ..models import Student, Todo, Mission
 
 bp = Blueprint('main', __name__)
 
@@ -150,12 +150,31 @@ def chart_data(student_name):
         'datasets': list(datasets.values())
     })
 
-@bp.route('/student/<student_name>')
+# src/flask_todo_app/routes/main.py の student_view 関数
+
+@bp.route('/student/<student_name>', methods=['GET', 'POST'])
 def student_view(student_name):
-    # この関数はページの初期表示(GET)のみを担当するようになります
     if ('student' not in session or session['student'] != student_name) and 'admin' not in session:
         return redirect(url_for('main.login'))
+
+    # ミッション取得と進捗計算ロジック
+    today = date.today()
+    start_of_week = today - timedelta(days=today.weekday())
+    week_str = start_of_week.strftime('%Y-%m-%d')
+    missions = Mission.query.filter_by(week_start_date=week_str).all()
     
+    week_todos = Todo.query.filter(
+        Todo.student_name == student_name,
+        Todo.completed == True,
+        Todo.date.between(start_of_week.strftime('%Y-%m-%d'), today.strftime('%Y-%m-%d'))
+    ).all()
+    
+    weekly_subject_progress = {s: 0 for s in ["国語", "数学", "理科", "社会", "英語"]}
+    for todo in week_todos:
+        if todo.subject in weekly_subject_progress:
+            weekly_subject_progress[todo.subject] += todo.actual_hour * 60 + todo.actual_min
+    
+    # ページ表示ロジック
     today_dt = date.today()
     date_str = request.args.get('date', today_dt.strftime('%Y-%m-%d'))
     current_date = datetime.strptime(date_str, '%Y-%m-%d').date()
@@ -163,7 +182,10 @@ def student_view(student_name):
     next_date = (current_date + timedelta(days=1)).strftime('%Y-%m-%d')
     
     todos = Todo.query.filter_by(student_name=student_name, date=date_str).order_by(Todo.id).all()
-    return render_template('student.html', todos=todos, student_name=student_name, date=date_str, prev_date=prev_date, next_date=next_date)
+    
+    return render_template('student.html', todos=todos, student_name=student_name, 
+                           date=date_str, prev_date=prev_date, next_date=next_date,
+                           missions=missions, weekly_progress=weekly_subject_progress)
 
 @bp.route('/api/add_todo', methods=['POST'])
 def add_todo_api():

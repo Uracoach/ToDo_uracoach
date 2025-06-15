@@ -2,10 +2,6 @@
 {% block title %}管理者ダッシュボード{% endblock %}
 {% block content %}
 <style>
-    .stats-container { display: flex; gap: 1em; margin-bottom: 2em; flex-wrap: wrap; }
-    .stat-box { flex-grow: 1; background: #fff; padding: 1.5em; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); min-width: 200px;}
-    .stat-box h4 { margin-top: 0; color: #555; }
-    .stat-box p { font-size: 2em; font-weight: bold; color: #007bff; margin: 0; }
     .action-links a, .action-links button { margin: 0 5px; }
 </style>
 
@@ -19,21 +15,22 @@
                 <tr><th>生徒名</th><th>今週の学習時間</th><th>総合計学習時間</th><th>操作</th></tr>
             </thead>
             <tbody>
-                {% for stats in student_stats %}
-                    <tr>
-                        <td><strong>{{ stats['name'] }}</strong></td>
-                        <td>{{ stats['week_total'] // 60 }}時間 {{ stats['week_total'] % 60 }}分</td>
-                        <td>{{ stats['all_time_total'] // 60 }}時間 {{ stats['all_time_total'] % 60 }}分</td>
-                        <td class="action-links">
-                            <a href="{{ url_for('admin.admin_view', student_name=stats['name']) }}">ToDoリスト</a> |
-                            <a href="{{ url_for('admin.reset_password', student_name=stats['name']) }}">PWリセット</a> |
-                            <form action="{{ url_for('admin.delete_student', student_name=stats['name']) }}" method="POST" style="display: inline;" onsubmit="return confirm('本当に全ての学習記録と共に削除しますか？これは元に戻せません。');">
-                                <button type="submit" style="background:none; border:none; color:#dc3545; padding:0; font-size:1em; cursor:pointer;">削除</button>
-                            </form>
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
+            {% for stats in student_stats %}
+                <tr>
+                    <td><strong>{{ stats.name }}</strong></td>
+                    <td>{{ (stats.week_total or 0) // 60 }}時間 {{ (stats.week_total or 0) % 60 }}分</td>
+                    <td>{{ (stats.all_time_total or 0) // 60 }}時間 {{ (stats.all_time_total or 0) % 60 }}分</td>
+                    <td class="action-links">
+                        <a href="{{ url_for('admin.admin_view', student_name=stats.name) }}">ToDo</a> |
+                        <a href="{{ url_for('admin.report', student_name=stats.name) }}" target="_blank">レポート</a> |
+                        <a href="{{ url_for('admin.reset_password', student_name=stats.name) }}">PWリセット</a> |
+                        <form action="{{ url_for('admin.delete_student', student_name=stats.name) }}" method="POST" style="display: inline;" onsubmit="return confirm('本当に「{{ stats.name }}」さんを全ての学習記録と共に削除しますか？これは元に戻せません。');">
+                            <button type="submit" style="background:none; border:none; color:#dc3545; padding:0; font-size:1em; cursor:pointer;">削除</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
         </table>
     </div>
     <div style="flex: 1; min-width: 250px;">

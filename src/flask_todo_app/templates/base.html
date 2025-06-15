@@ -8,70 +8,46 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 <body>
-    <header>
-        <nav class="nav">
-            <a href="{{ url_for('main.home') }}">
-                <img src="{{ url_for('static', filename='uracoach_logo.png') }}" alt="ホーム" style="height: 30px; vertical-align: middle;">
-            </a>
-            
-            <div class="nav-links">
-                {% if session['student'] %}
-                    <span>ようこそ, {{ session['student'] }} さん</span>
-                    <a href="{{ url_for('main.logout') }}">ログアウト</a>
-                {% elif 'admin' in session %}
-                    <a href="{{ url_for('admin.dashboard') }}">ダッシュボード</a>
-                    <a href="{{ url_for('main.logout') }}">ログアウト</a>
-                {% else %}
-                    <a href="{{ url_for('main.login') }}">ログイン</a>
-                {% endif %}
-                
-                {% if 'admin' not in session %}
+    <div class="content-wrapper">
+        <header>
+            <nav class="nav">
+                <a href="{{ url_for('main.home') }}">
+                    <img src="{{ url_for('static', filename='uracoach_logo.png') }}" alt="ホーム" style="height: 30px; vertical-align: middle;">
+                </a>
+                <div class="nav-links">
+                    {% if session['student'] %}
+                        <span>ようこそ, {{ session['student'] }} さん</span>
+                        <a href="{{ url_for('main.logout') }}">ログアウト</a>
+                    {% elif 'admin' in session %}
+                        <a href="{{ url_for('admin.dashboard') }}">ダッシュボード</a>
+                        <a href="{{ url_for('admin.missions') }}">ミッション管理</a>
+                        <a href="{{ url_for('main.logout') }}">ログアウト</a>
+                    {% else %}
+                        <a href="{{ url_for('main.login') }}">ログイン</a>
+                    {% endif %}
+                    
+                    {% if 'admin' not in session %}
                     <a href="{{ url_for('admin.admin_login') }}">管理者ページ</a>
-                {% endif %}
-            </div>
-        </nav>
-    </header>
+                    {% endif %}
+                </div>
+            </nav>
+        </header>
 
-    <div class="flash-messages">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash {{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <main>
+            {% block content %}{% endblock %}
+        </main>
     </div>
 
-    <main>
-        {% block content %}{% endblock %}
-    </main>
-
-    {% block scripts %}
-    <script>
-    function setupPasswordToggle() {
-        document.querySelectorAll('.password-wrapper').forEach(wrapper => {
-            if (wrapper.querySelector('.password-toggle')) { return; }
-            const input = wrapper.querySelector('input[type="password"], input[type="text"]');
-            if (input) {
-                const toggle = document.createElement('button');
-                toggle.type = 'button';
-                toggle.className = 'password-toggle';
-                toggle.innerHTML = '<i class="fa-solid fa-eye"></i>';
-                toggle.addEventListener('click', () => {
-                    if (input.type === 'password') {
-                        input.type = 'text';
-                        toggle.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
-                    } else {
-                        input.type = 'password';
-                        toggle.innerHTML = '<i class="fa-solid fa-eye"></i>';
-                    }
-                });
-                wrapper.appendChild(toggle);
-            }
-        });
-    }
-    document.addEventListener('DOMContentLoaded', setupPasswordToggle);
-    </script>
-    {% endblock %}
+    {% block scripts %}{% endblock %}
 </body>
 </html>
