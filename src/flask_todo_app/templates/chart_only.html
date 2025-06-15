@@ -1,6 +1,16 @@
 {% extends 'base.html' %}
 {% block title %}{{ student_name }}の学習グラフ{% endblock %}
 {% block content %}
+    <style>
+        /* グラフを囲むコンテナのスタイルを追加 */
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 60vh; /* 画面の高さの60%を確保 */
+            width: 90vw; /* 画面の幅の90%を確保 */
+        }
+    </style>
+
     <h2>{{ student_name }}の学習グラフ</h2>
     <div>
         <button id="prevWeek">前の週</button>
@@ -14,7 +24,7 @@
             <option value="英語">英語</option>
         </select>
     </div>
-    <div style="width: 80%; margin: auto; margin-top: 1em;">
+    <div class="chart-container">
         <canvas id="studyChart"></canvas>
     </div>
     
@@ -22,38 +32,34 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
     <script>
+        // ... (formatMinutes関数などは変更なし) ...
         Chart.register(ChartDataLabels);
-        const subjectColors = {
-            '国語': 'rgba(231, 76, 60, 0.7)', '数学': 'rgba(52, 152, 219, 0.7)',
-            '理科': 'rgba(46, 204, 113, 0.7)', '社会': 'rgba(230, 126, 34, 0.7)',
-            '英語': 'rgba(241, 196, 15, 0.7)'
-        };
-        function formatMinutes(totalMinutes) {
-            if (!totalMinutes || totalMinutes === 0) return '';
-            const hours = Math.floor(totalMinutes / 60);
-            const minutes = totalMinutes % 60;
-            return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-        }
+        const subjectColors = { '国語': 'rgba(231, 76, 60, 0.7)', '数学': 'rgba(52, 152, 219, 0.7)', '理科': 'rgba(46, 204, 113, 0.7)', '社会': 'rgba(230, 126, 34, 0.7)', '英語': 'rgba(241, 196, 15, 0.7)' };
+        function formatMinutes(totalMinutes) { if (!totalMinutes || totalMinutes === 0) return ''; const hours = Math.floor(totalMinutes / 60); const minutes = totalMinutes % 60; return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`; }
+
         let weekOffset = 0;
         let myChart;
+
         async function fetchAndDrawChart() {
+            // ... (fetch部分は変更なし) ...
             const subject = document.getElementById('subjectFilter').value;
-            // --- ↓↓↓ ここの変数名を student から student_name に修正 ↓↓↓ ---
             const response = await fetch(`{{ url_for('main.chart_data', student_name=student_name) }}?week_offset=${weekOffset}&subject=${subject}`);
             const data = await response.json();
             const chartData = {
                 labels: data.labels,
-                datasets: data.datasets.map(dataset => ({
-                    ...dataset,
-                    backgroundColor: subjectColors[dataset.label] || 'rgba(201, 203, 207, 0.7)'
-                }))
+                datasets: data.datasets.map(dataset => ({ ...dataset, backgroundColor: subjectColors[dataset.label] || 'rgba(201, 203, 207, 0.7)' }))
             };
             const ctx = document.getElementById('studyChart').getContext('2d');
             if (myChart) { myChart.destroy(); }
+            
             myChart = new Chart(ctx, {
                 type: 'bar',
                 data: chartData,
                 options: {
+                    // ↓↓↓ ここに2つのオプションを追加 ↓↓↓
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    // ↑↑↑ 2つのオプションここまで ↑↑↑
                     plugins: {
                         title: { display: true, text: data.title },
                         datalabels: {
@@ -67,11 +73,11 @@
                             }
                         }
                     },
-                    responsive: true,
                     scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, title: { display: true, text: '学習時間 (分)'} } }
                 }
             });
         }
+        
         document.getElementById('prevWeek').addEventListener('click', () => { weekOffset--; fetchAndDrawChart(); });
         document.getElementById('nextWeek').addEventListener('click', () => { weekOffset++; fetchAndDrawChart(); });
         document.getElementById('subjectFilter').addEventListener('change', fetchAndDrawChart);
