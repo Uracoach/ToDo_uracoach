@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}管理ビュー: {{ student.name }}{% endblock %}
+{% block content %}
+    <h2>{{ student.name }}のToDo閲覧（{{ date }}）</h2>
+    <form method="GET">
+        <input type="date" name="date" value="{{ date }}">
+        <input type="submit" value="日付で表示">
+    </form>
+
+    <a href="{{ url_for('main.student_chart', student_name=student.name) }}" target="_blank">📊 {{ student.name }}の学習グラフを見る</a>
+
+    <table>
+        <thead>
+            <tr><th>完了</th><th>教科</th><th>教材</th><th>ページ</th><th>目標</th><th>実績</th></tr>
+        </thead>
+        <tbody>
+        {% for todo in todos %}
+        <tr>
+            <td>{{ '✔' if todo.completed else ' ' }}</td>
+            <td>{{ todo.subject }}</td>
+            <td>{{ todo.material }}</td>
+            <td>{{ todo.start_page }} - {{ todo.end_page }}</td>
+            <td>{{ todo.target_hour }}h {{ todo.target_min }}m</td>
+            <td>{{ todo.actual_hour }}h {{ todo.actual_min }}m</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6">この日のToDoはありません。</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

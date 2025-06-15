@@ -1,0 +1,15 @@
+#動かしたい時
+#flask --app flask_todo_app run
+
+#ブラウザ開くとき
+#http:127.0.0.1:5000
+
+#再起動時のターミナル操作
+# 1. プロジェクトフォルダに移動
+#cd C:\Users\short\Documents\UraCoach\flask_todo_app
+
+# 2. 仮想環境を有効化
+#.\venv\Scripts\activate
+
+# 3. アプリケーションを起動
+#python run.py

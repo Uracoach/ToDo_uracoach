@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}管理者ログイン{% endblock %}
+{% block content %}
+    <h2>管理者ログイン</h2>
+    <form method="POST">
+        <label for="password">管理者パスワード:</label><br>
+        <div class="password-wrapper">
+            <input type="password" name="password" id="password" required>
+        </div>
+        <br>
+        <input type="submit" value="ログイン">
+    </form>
+{% endblock %}

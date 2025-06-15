@@ -1,0 +1,127 @@
+/* src/flask_todo_app/static/style.css */
+
+/* --- 基本スタイル --- */
+body {
+    font-family: sans-serif;
+    max-width: 800px;
+    margin: 2em auto;
+    padding: 1em;
+    line-height: 1.6;
+    background-color: #f4f7f6;
+    color: #333;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1em;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: left;
+}
+
+th {
+    background-color: #e9ecef;
+}
+
+input[type=text], input[type=password], input[type=number], select, input[type=date] {
+    padding: 8px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    width: calc(100% - 18px); /* paddingを考慮 */
+}
+
+input[type=submit] {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+input[type=submit]:hover {
+    background-color: #0056b3;
+}
+
+.message { color: red; }
+
+.nav {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+    padding-bottom: 1em;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 2em;
+}
+
+.nav a {
+    text-decoration: none;
+    color: #0056b3;
+    font-weight: bold;
+}
+
+.nav a:hover {
+    text-decoration: underline;
+}
+
+/* フラッシュメッセージ */
+.flash {
+    padding: 1em;
+    margin-bottom: 1em;
+    border-radius: 5px;
+    border: 1px solid;
+}
+.flash.success {
+    background-color: #d4edda;
+    color: #155724;
+    border-color: #c3e6cb;
+}
+
+/* --- ここからがレスポンシブ対応の追加コード --- */
+@media (max-width: 768px) {
+    body {
+        padding: 0.5em;
+        margin: 1em auto;
+    }
+
+    .nav {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    table, th, td {
+        font-size: 0.9em;
+        padding: 8px;
+    }
+
+    input[type=submit] {
+        width: 100%;
+    }
+}
+    /* src/flask_todo_app/static/style.css の末尾に追加 */
+
+/* --- パスワード表示切替ボタンのスタイル --- */
+.password-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+    color: #888;
+    background: none;
+    border: none;
+    outline: none;
+}

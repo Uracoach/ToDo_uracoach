@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}生徒ログイン{% endblock %}
+{% block content %}
+    <h2>生徒ログイン</h2>
+    {% if message %}
+        <p class="message">{{ message }}</p>
+    {% endif %}
+    <form method="POST">
+        名前：<input type="text" name="student" required><br>
+        パスワード：
+        <div class="password-wrapper">
+            <input type="password" name="password" required>
+        </div>
+        <br>
+        <input type="submit" value="ログイン">
+    </form>
+{% endblock %}

@@ -1,0 +1,2 @@
+ADMIN_PASSWORD=UraWa20230316
+FLASK_APP=flask_todo_app

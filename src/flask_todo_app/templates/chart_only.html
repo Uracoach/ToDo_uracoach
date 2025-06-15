@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}{{ student_name }}の学習グラフ{% endblock %}
+{% block content %}
+    <h2>{{ student_name }}の学習グラフ</h2>
+    <div>
+        <button id="prevWeek">前の週</button>
+        <button id="nextWeek">次の週</button>
+        <select id="subjectFilter">
+            <option value="all">すべての教科</option>
+            <option value="国語">国語</option>
+            <option value="数学">数学</option>
+            <option value="理科">理科</option>
+            <option value="社会">社会</option>
+            <option value="英語">英語</option>
+        </select>
+    </div>
+    <div style="width: 80%; margin: auto; margin-top: 1em;">
+        <canvas id="studyChart"></canvas>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+    <script>
+        Chart.register(ChartDataLabels);
+        const subjectColors = {
+            '国語': 'rgba(231, 76, 60, 0.7)', '数学': 'rgba(52, 152, 219, 0.7)',
+            '理科': 'rgba(46, 204, 113, 0.7)', '社会': 'rgba(230, 126, 34, 0.7)',
+            '英語': 'rgba(241, 196, 15, 0.7)'
+        };
+        function formatMinutes(totalMinutes) {
+            if (!totalMinutes || totalMinutes === 0) return '';
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+        }
+        let weekOffset = 0;
+        let myChart;
+        async function fetchAndDrawChart() {
+            const subject = document.getElementById('subjectFilter').value;
+            // --- ↓↓↓ ここの変数名を student から student_name に修正 ↓↓↓ ---
+            const response = await fetch(`{{ url_for('main.chart_data', student_name=student_name) }}?week_offset=${weekOffset}&subject=${subject}`);
+            const data = await response.json();
+            const chartData = {
+                labels: data.labels,
+                datasets: data.datasets.map(dataset => ({
+                    ...dataset,
+                    backgroundColor: subjectColors[dataset.label] || 'rgba(201, 203, 207, 0.7)'
+                }))
+            };
+            const ctx = document.getElementById('studyChart').getContext('2d');
+            if (myChart) { myChart.destroy(); }
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    plugins: {
+                        title: { display: true, text: data.title },
+                        datalabels: {
+                            anchor: 'end', align: 'end',
+                            formatter: (value, context) => {
+                                const total = context.chart.data.datasets.reduce((sum, dataset) => sum + dataset.data[context.dataIndex], 0);
+                                if (context.datasetIndex === context.chart.data.datasets.length - 1 && total > 0) {
+                                    return formatMinutes(total);
+                                }
+                                return '';
+                            }
+                        }
+                    },
+                    responsive: true,
+                    scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, title: { display: true, text: '学習時間 (分)'} } }
+                }
+            });
+        }
+        document.getElementById('prevWeek').addEventListener('click', () => { weekOffset--; fetchAndDrawChart(); });
+        document.getElementById('nextWeek').addEventListener('click', () => { weekOffset++; fetchAndDrawChart(); });
+        document.getElementById('subjectFilter').addEventListener('change', fetchAndDrawChart);
+        document.addEventListener('DOMContentLoaded', fetchAndDrawChart);
+    </script>
+{% endblock %}

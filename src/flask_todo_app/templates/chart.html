@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ student_name }}の学習データ{% endblock %}
+
+{% block content %}
+<style>
+    .data-link-container { display: flex; justify-content: center; gap: 2rem; margin-top: 3rem; text-align: center; }
+    .data-link-box { padding: 2rem; border: 1px solid #ddd; border-radius: 8px; text-decoration: none; color: #333; transition: all 0.3s ease; width: 200px; }
+    .data-link-box:hover { transform: translateY(-5px); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    .data-link-box h3 { margin-top: 0; color: #0056b3; }
+</style>
+
+<h2>{{ student_name }}の学習データ</h2>
+<p>見たいデータの種類を選んでください。</p>
+
+<div class="data-link-container">
+    <a href="{{ url_for('main.show_chart_only', student_name=student_name) }}" class="data-link-box">
+        <h3>学習グラフ</h3>
+        <p>日々の学習時間をグラフで視覚的に確認します。</p>
+    </a>
+    <a href="{{ url_for('main.show_summary', student_name=student_name) }}" class="data-link-box" target="_blank">
+        <h3>学習集計表</h3>
+        <p>今日・今週・今月の学習時間を表で詳しく確認します。</p>
+    </a>
+</div>
+{% endblock %}

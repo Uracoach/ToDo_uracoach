@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ student_name }}の学習集計表{% endblock %}
+
+{% block content %}
+<style>
+    /* Google Fontsからフォントをインポート */
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Yuji+Syuku&family=Kaisei+Decol:wght@700&display=swap');
+
+    .summary-container { text-align: center; padding: 2em; }
+    .main-title { font-family: 'Yuji Syuku', serif; font-size: 3.5em; color: #2c3e50; margin-bottom: 0.5em; }
+    .summary-table { font-family: 'Noto Sans JP', sans-serif; width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 2em; margin-bottom: 3em; border: 1px solid #ddd; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+    .summary-table th, .summary-table td { padding: 15px; text-align: center; vertical-align: middle; }
+    .summary-table thead th { background-color: #34495e; color: #ffffff; font-weight: 700; }
+    .summary-table tbody tr:nth-child(even) { background-color: #f8f9fa; }
+    .summary-table .subject-col { text-align: left; font-weight: 700; width: 15%; }
+    .summary-table tfoot td { font-weight: 700; background-color: #ecf0f1; border-top: 2px solid #bdc3c7; }
+    
+    .monthly-total-container { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2em; border-radius: 12px; box-shadow: 0 10px 20px rgba(0,0,0,0.15); margin: 2em 0; }
+    .monthly-total-container h3 { margin-top: 0; font-weight: 400; opacity: 0.8; }
+    .counter-value { font-size: 4em; font-weight: 700; letter-spacing: 2px; }
+
+    .comparison-text { font-family: 'Kaisei Decol', serif; font-size: 1.2em; margin-top: 1.5em; padding: 1em; border-radius: 8px; display: inline-block; }
+    .comparison-text.plus { background-color: #e8f5e9; color: #2e7d32; }
+    .comparison-text.minus { background-color: #ffebee; color: #c62828; }
+
+    @keyframes don-effect {
+        0% { transform: scale(0.3) rotate(-15deg); opacity: 0; }
+        60% { transform: scale(1.1) rotate(5deg); opacity: 1; }
+        100% { transform: scale(1) rotate(0deg); }
+    }
+    .level-container { margin-top: 2em; font-family: 'Noto Sans JP', sans-serif; font-size: 1.8em; }
+    .level-text-effect { animation: don-effect 0.6s cubic-bezier(0.250, 0.460, 0.450, 0.940) both; }
+</style>
+
+<div class="summary-container">
+    <h1 class="main-title">努力は裏切らない</h1>
+
+    <form method="GET">
+        <label for="month">表示する月を選択:</label>
+        <input type="month" id="month" name="month" value="{{ month_str }}">
+        <input type="submit" value="表示" style="width: auto; padding: 5px 10px;">
+    </form>
+
+    <table class="summary-table">
+        <thead>
+            <tr>
+                <th>教科</th>
+                <th>今日 ({{ date_info.today }})</th>
+                <th>今週 ({{ date_info.week_start }}~{{ date_info.week_end }})</th>
+                <th>今月 ({{ date_info.month }})</th>
+                <th>今までの合計 ({{ date_info.total_days }}日間)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for subject, data in summary_data.items() %}
+            <tr>
+                <td class="subject-col">{{ subject }}</td>
+                <td>{{ data.today_total // 60 }}時間 {{ data.today_total % 60 }}分</td>
+                <td>{{ data.week_total // 60 }}時間 {{ data.week_total % 60 }}分</td>
+                <td>{{ data.month_total // 60 }}時間 {{ data.month_total % 60 }}分</td>
+                <td>{{ data.all_time_total // 60 }}時間 {{ data.all_time_total % 60 }}分</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td class="subject-col">合計</td>
+                <td>{{ total_row.today // 60 }}時間 {{ total_row.today % 60 }}分</td>
+                <td>{{ total_row.week // 60 }}時間 {{ total_row.week % 60 }}分</td>
+                <td>{{ total_row.month // 60 }}時間 {{ total_row.month % 60 }}分</td>
+                <td>{{ total_row.all_time // 60 }}時間 {{ total_row.all_time % 60 }}分</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="monthly-total-container">
+        <h3>{{ date_info.month }}の総学習時間</h3>
+        <div class="counter-value" data-total-minutes="{{ total_row.month }}">
+            <span id="hours">0</span>時間 <span id="minutes">0</span>分
+        </div>
+    </div>
+    
+    <div class="level-container">
+        <div>{{ date_info.month }}のあなたは... <span class="level-text level-text-effect" style="{{ level_style }}">{{ level_text }}</span> ！！</div>
+        
+        {% if comparison_minutes > 0 %}
+            <div class="comparison-text plus">
+                先月より {{ comparison_minutes // 60 }}時間 {{ comparison_minutes % 60 }}分 も多く勉強しました！素晴らしい！
+            </div>
+        {% elif comparison_minutes < 0 %}
+            <div class="comparison-text minus">
+                先月より {{ (-comparison_minutes) // 60 }}時間 {{ (-comparison_minutes) % 60 }}分 少なかったようです。来月は頑張ろう！
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const counterElement = document.querySelector('.counter-value');
+    if (!counterElement) return;
+    const hoursSpan = document.getElementById('hours');
+    const minutesSpan = document.getElementById('minutes');
+    const totalMinutes = parseInt(counterElement.dataset.totalMinutes, 10);
+    if (isNaN(totalMinutes) || totalMinutes === 0) {
+        hoursSpan.textContent = 0;
+        minutesSpan.textContent = 0;
+        return;
+    }
+    let currentMinutes = 0;
+    const duration = 1500;
+    const stepTime = 20;
+    const totalSteps = duration / stepTime;
+    const increment = totalMinutes / totalSteps;
+    const timer = setInterval(() => {
+        currentMinutes += increment;
+        if (currentMinutes >= totalMinutes) {
+            currentMinutes = totalMinutes;
+            clearInterval(timer);
+        }
+        const hours = Math.floor(currentMinutes / 60);
+        const minutes = Math.floor(currentMinutes % 60);
+        hoursSpan.textContent = hours;
+        minutesSpan.textContent = minutes;
+    }, stepTime);
+});
+</script>
+{% endblock %}
