@@ -9,6 +9,9 @@
         <label for="description">ミッション内容:</label><br>
         <textarea name="description" id="description" rows="2" style="width: 98%;" required></textarea><br>
         <small>例：「今週は毎日30分以上勉強しよう！」</small>
+        
+        {# ミッションの目標設定部分は一旦シンプル化のためコメントアウト #}
+        {#
         <hr>
         <p><strong>任意：特定の教科の学習時間をミッションにする場合</strong></p>
         <label for="subject_target">教科:</label>
@@ -23,6 +26,7 @@
         <label for="minutes_target">目標時間（分）:</label>
         <input type="number" name="minutes_target" id="minutes_target" min="1"><br>
         <small>例：「数学」を「60」分</small>
+        #}
         <br><br>
         <input type="submit" value="ミッションを追加">
     </form>
@@ -33,19 +37,12 @@
     {% if missions %}
     <table>
         <thead>
-            <tr><th>内容</th><th>目標</th><th>操作</th></tr>
+            <tr><th>内容</th><th>操作</th></tr>
         </thead>
         <tbody>
             {% for mission in missions %}
             <tr>
                 <td>{{ mission.description }}</td>
-                <td>
-                    {% if mission.subject_target %}
-                        {{ mission.subject_target }}を{{ mission.minutes_target }}分
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
                 <td>
                     <form action="{{ url_for('admin.delete_mission', mission_id=mission.id) }}" method="POST" onsubmit="return confirm('このミッションを削除しますか？');">
                         <button type="submit" style="background:none; border:none; color:#dc3545; padding:0; font-size:1em; cursor:pointer;">削除</button>

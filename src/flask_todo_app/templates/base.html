@@ -20,7 +20,6 @@
                         <a href="{{ url_for('main.logout') }}">ログアウト</a>
                     {% elif 'admin' in session %}
                         <a href="{{ url_for('admin.dashboard') }}">ダッシュボード</a>
-                        <a href="{{ url_for('admin.missions') }}">ミッション管理</a>
                         <a href="{{ url_for('main.logout') }}">ログアウト</a>
                     {% else %}
                         <a href="{{ url_for('main.login') }}">ログイン</a>

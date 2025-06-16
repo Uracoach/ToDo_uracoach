@@ -21,7 +21,7 @@
                     <td>{{ (stats.week_total or 0) // 60 }}時間 {{ (stats.week_total or 0) % 60 }}分</td>
                     <td>{{ (stats.all_time_total or 0) // 60 }}時間 {{ (stats.all_time_total or 0) % 60 }}分</td>
                     <td class="action-links">
-                        <a href="{{ url_for('admin.admin_view', student_name=stats.name) }}">ToDo</a> |
+                        <a href="{{ url_for('admin.admin_view', student_name=stats.name) }}">ToDoリスト</a> |
                         <a href="{{ url_for('admin.report', student_name=stats.name) }}" target="_blank">レポート</a> |
                         <a href="{{ url_for('admin.reset_password', student_name=stats.name) }}">PWリセット</a> |
                         <form action="{{ url_for('admin.delete_student', student_name=stats.name) }}" method="POST" style="display: inline;" onsubmit="return confirm('本当に「{{ stats.name }}」さんを全ての学習記録と共に削除しますか？これは元に戻せません。');">

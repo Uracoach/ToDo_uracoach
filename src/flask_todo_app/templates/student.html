@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}{{ student_name }}のToDo{% endblock %}
 {% block content %}
-    <h2>{{ student_name }}のToDo（{{ date }}）</h2>
+    <h2>{{ student_name }}のToDo（{{ date }})</h2>
     <div style="display: flex; align-items: center; gap: 1em; margin: 1em 0; flex-wrap: wrap;">
         <a href="{{ url_for('main.student_view', student_name=student_name, date=prev_date) }}">＜ 前の日</a>
         <form method="GET" style="margin: 0;">
@@ -19,12 +19,11 @@
     {% if missions %}
         {% for mission in missions %}
             <div>
-                <p><strong>{{ mission.description }}</strong></p>
-                {% if mission.subject_target %}
-                    {% set progress = weekly_progress[mission.subject_target] | default(0) %}
-                    {% set goal = mission.minutes_target %}
-                    <p>{{ mission.subject_target }}: {{ progress }} / {{ goal }} 分</p>
-                    <progress value="{{ progress }}" max="{{ goal }}" style="width: 100%;"></progress>
+                {% if mission.completed %}
+                    <div class="mission-complete-effect">COMPLETE!!</div>
+                    <p><s><strong>{{ mission.description }}</strong></s></p>
+                {% else %}
+                    <p><strong>{{ mission.description }}</strong></p>
                 {% endif %}
             </div>
             {% if not loop.last %}<hr style="border-style: dashed; border-color: #ccc;">{% endif %}
@@ -33,6 +32,7 @@
         <p>今週のミッションはありません。</p>
     {% endif %}
     </div>
+
     <h3>新しいToDoを追加（目標設定）</h3>
     <form id="add-todo-form">
         <input type="hidden" name="date" value="{{ date }}">
@@ -57,13 +57,13 @@
         <br>
         <input type="submit" value="ToDoを追加">
     </form>
+    
     <hr style="margin: 2em 0;">
+    
     <h3>ToDoリスト</h3>
     <table id="todo-table">
         <thead>
-            <tr>
-                <th>教科</th><th>教材</th><th>ページ</th><th>目標</th><th>実績 & 完了報告</th><th>操作</th>
-            </tr>
+            <tr><th>教科</th><th>教材</th><th>ページ</th><th>目標</th><th>実績 & 完了報告</th><th>操作</th></tr>
         </thead>
         <tbody id="todo-list-body">
             {% for todo in todos %}
@@ -95,8 +95,120 @@
         </tbody>
     </table>
 {% endblock %}
+
 {% block scripts %}
+<style>
+@keyframes complete-don {
+    0% { transform: scale(0) rotate(720deg); opacity: 0; }
+    80% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+}
+.mission-complete-effect {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: #ffc107;
+    text-align: center;
+    text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+    animation: complete-don 0.8s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+}
+</style>
 <script>
-// ... (既存のAJAXスクリプトは変更なし) ...
+document.addEventListener('DOMContentLoaded', () => {
+    // ToDo追加の非同期処理
+    const addForm = document.getElementById('add-todo-form');
+    if (addForm) {
+        addForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            fetch("{{ url_for('main.add_todo_api') }}", {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const newRow = createTodoRow(data.todo);
+                    document.getElementById('todo-list-body').appendChild(newRow);
+                    document.getElementById('no-todos-row')?.remove();
+                    this.reset();
+                } else {
+                    alert('エラー: ' + data.error);
+                }
+            });
+        });
+    }
+
+    // ToDo完了の非同期処理
+    const todoListBody = document.getElementById('todo-list-body');
+    if (todoListBody) {
+        todoListBody.addEventListener('submit', function(event) {
+            if (event.target.classList.contains('update-todo-form')) {
+                event.preventDefault();
+                const form = event.target;
+                const todoId = form.dataset.id;
+                const formData = new FormData(form);
+                const statusCell = form.parentElement;
+                fetch(`/api/update_todo/${todoId}`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        statusCell.innerHTML = `✔ ${data.actual_hour}h ${data.actual_min}m`;
+                    } else {
+                        alert('エラー: ' + data.error);
+                    }
+                });
+            }
+        });
+    }
+    
+    // 削除リンクの非同期処理
+    document.addEventListener('click', function(event) {
+        if (event.target.classList.contains('delete-link')) {
+            event.preventDefault();
+            if (confirm('本当にこのToDoを削除しますか？')) {
+                const link = event.target;
+                const todoId = link.dataset.id;
+                const row = link.closest('tr');
+                fetch(`/api/delete_todo/${todoId}`, { method: 'DELETE' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        row.style.transition = 'opacity 0.5s ease';
+                        row.style.opacity = '0';
+                        setTimeout(() => row.remove(), 500);
+                    } else {
+                        alert(`エラー: ${data.error || '削除に失敗しました。'}`);
+                    }
+                });
+            }
+        }
+    });
+});
+
+function createTodoRow(todo) {
+    const tr = document.createElement('tr');
+    tr.dataset.todoId = todo.id;
+    tr.innerHTML = `
+        <td>${todo.subject}</td>
+        <td>${todo.material}</td>
+        <td>${todo.start_page} - ${todo.end_page}</td>
+        <td>${todo.target_hour}h ${todo.target_min}m</td>
+        <td class="status-cell">
+            <form class="update-todo-form" data-id="${todo.id}">
+                <input type="number" name="actual_hour" min="0" value="0" style="width: 40px;"> 時間
+                <input type="number" name="actual_min" min="0" max="59" value="0" style="width: 40px;"> 分
+                <input type="submit" value="完了" style="width: auto; padding: 5px 10px; font-size: 0.9em;">
+            </form>
+        </td>
+        <td>
+            <a href="/edit_todo/${todo.id}">編集</a>
+            <a href="#" class="delete-link" data-id="${todo.id}">削除</a>
+        </td>
+    `;
+    return tr;
+}
 </script>
 {% endblock %}

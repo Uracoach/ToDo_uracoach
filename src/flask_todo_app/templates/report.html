@@ -12,7 +12,6 @@
         th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
         .no-print { text-align: center; margin-top: 2em; }
-        /* 印刷時用のスタイル */
         @media print {
             .no-print { display: none; }
             a { text-decoration: none; color: black; }
@@ -35,7 +34,7 @@
                 <h3>教科別学習時間</h3>
                 <ul>
                     {% for item in subject_totals %}
-                        <li>{{ item.subject }}: {{ item.total_minutes }}分</li>
+                        <li>{{ item.subject }}: {{ item.total_minutes // 60 }}時間 {{ item.total_minutes % 60 }}分</li>
                     {% else %}
                         <li>今月の学習記録はありません。</li>
                     {% endfor %}

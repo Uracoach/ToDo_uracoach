@@ -1,18 +1,57 @@
 {% extends 'base.html' %}
 {% block title %}管理ビュー: {{ student.name }}{% endblock %}
 {% block content %}
-    <h2>{{ student.name }}のToDo閲覧（{{ date }}）</h2>
+    <h2>{{ student.name }}のToDo閲覧（{{ date }})</h2>
+    <a href="{{ url_for('main.student_chart', student_name=student.name) }}" target="_blank">📊 {{ student.name }}の学習グラフを見る</a>
+    
+    <hr style="margin: 2em 0;">
+    
+    <h3>今週のミッション管理</h3>
+    <div style="background: #fff; padding: 1.5em; border-radius: 8px; margin-bottom: 2em;">
+        <h4>新しいミッションを追加</h4>
+        <form action="{{ url_for('admin.add_student_mission', student_name=student.name) }}" method="POST">
+            <textarea name="description" rows="2" style="width: 98%;" required placeholder="例：今週は数学の課題を終わらせる！"></textarea><br>
+            <input type="submit" value="この生徒にミッションを追加" style="width: auto; margin-top: 0.5em;">
+        </form>
+        <hr>
+        <h4>設定済みミッション</h4>
+        {% if missions %}
+        <table>
+            <thead><tr><th>内容</th><th>状態</th><th>操作</th></tr></thead>
+            <tbody>
+            {% for mission in missions %}
+            <tr>
+                <td>{{ mission.description }}</td>
+                <td>
+                    {% if mission.completed %}
+                        <span style="color: green; font-weight: bold;">✔ 達成済み</span>
+                    {% else %}
+                        <span style="color: #888;">未達成</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if not mission.completed %}
+                    <form action="{{ url_for('admin.mark_mission_complete', mission_id=mission.id) }}" method="POST">
+                        <input type="submit" value="完了にする" style="width: auto; padding: 5px 10px; font-size: 0.9em;">
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>今週のミッションはありません。</p>
+        {% endif %}
+    </div>
+
+    <h3>ToDoリスト</h3>
     <form method="GET">
         <input type="date" name="date" value="{{ date }}">
-        <input type="submit" value="日付で表示">
+        <input type="submit" value="日付で表示" style="width: auto; padding: 5px 10px;">
     </form>
-
-    <a href="{{ url_for('main.student_chart', student_name=student.name) }}" target="_blank">📊 {{ student.name }}の学習グラフを見る</a>
-
     <table>
-        <thead>
-            <tr><th>完了</th><th>教科</th><th>教材</th><th>ページ</th><th>目標</th><th>実績</th></tr>
-        </thead>
+        <thead><tr><th>完了</th><th>教科</th><th>教材</th><th>ページ</th><th>目標</th><th>実績</th></tr></thead>
         <tbody>
         {% for todo in todos %}
         <tr>
