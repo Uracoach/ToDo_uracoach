@@ -124,37 +124,6 @@ def delete_todo_api(todo_id):
         return jsonify({'success': True})
     return jsonify({'success': False, 'error': 'Permission denied'}), 403
 
-@bp.route('/edit_todo/<int:todo_id>', methods=['GET', 'POST'])
-def edit_todo(todo_id):
-    if ('student' not in session and 'admin' not in session):
-        return redirect(url_for('main.login'))
-    
-    todo = Todo.query.get_or_404(todo_id)
-    
-    is_owner = 'student' in session and todo.author.name == session['student']
-    is_admin = 'admin' in session
-    if not (is_owner or is_admin):
-        flash("編集権限がありません。", "error")
-        return redirect(url_for('main.home'))
-
-    if request.method == 'POST':
-        todo.subject = request.form['subject']
-        todo.material = request.form.get('material', '')
-        todo.start_page = int(request.form.get('start_page') or 0)
-        todo.end_page = int(request.form.get('end_page') or 0)
-        todo.target_hour = int(request.form.get('target_hour', 0))
-        todo.target_min = int(request.form.get('target_min', 0))
-        db.session.commit()
-        flash("ToDoを更新しました。", "success")
-        
-        # ログインしているユーザーに応じてリダイレクト先を変更
-        if is_admin:
-            return redirect(url_for('admin.admin_view', student_name=todo.student_name))
-        else:
-            return redirect(url_for('main.student_view', student_name=todo.student_name, date=todo.date))
-
-    return render_template('edit_todo.html', todo=todo)
-
 @bp.route('/student/<student_name>/chart')
 def student_chart(student_name):
     if ('student' not in session or session['student'] != student_name) and 'admin' not in session:

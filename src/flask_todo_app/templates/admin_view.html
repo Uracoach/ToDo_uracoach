@@ -6,44 +6,37 @@
     
     <hr style="margin: 2em 0;">
     
-    <h3>今週のミッション管理</h3>
-    <div style="background: #fff; padding: 1.5em; border-radius: 8px; margin-bottom: 2em;">
-        <h4>新しいミッションを追加</h4>
-        <form action="{{ url_for('admin.add_student_mission', student_name=student.name) }}" method="POST">
-            <textarea name="description" rows="2" style="width: 98%;" required placeholder="例：今週は数学の課題を終わらせる！"></textarea><br>
-            <input type="submit" value="この生徒にミッションを追加" style="width: auto; margin-top: 0.5em;">
-        </form>
-        <hr>
-        <h4>設定済みミッション</h4>
-        {% if missions %}
-        <table>
-            <thead><tr><th>内容</th><th>状態</th><th>操作</th></tr></thead>
-            <tbody>
+    <h3>今週のミッション達成状況</h3>
+    <table>
+        <thead>
+            <tr><th>ミッション内容</th><th>状態</th><th>操作</th></tr>
+        </thead>
+        <tbody>
             {% for mission in missions %}
             <tr>
                 <td>{{ mission.description }}</td>
                 <td>
-                    {% if mission.completed %}
+                    {% if mission.id in completed_mission_ids %}
                         <span style="color: green; font-weight: bold;">✔ 達成済み</span>
                     {% else %}
                         <span style="color: #888;">未達成</span>
                     {% endif %}
                 </td>
                 <td>
-                    {% if not mission.completed %}
+                    {% if not mission.id in completed_mission_ids %}
                     <form action="{{ url_for('admin.mark_mission_complete', mission_id=mission.id) }}" method="POST">
-                        <input type="submit" value="完了にする" style="width: auto; padding: 5px 10px; font-size: 0.9em;">
+                        <input type="submit" value="完了にする" style="width: auto; padding: 5px 10px;">
                     </form>
                     {% endif %}
                 </td>
             </tr>
+            {% else %}
+            <tr><td colspan="3">今週のミッションはありません。</td></tr>
             {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <p>今週のミッションはありません。</p>
-        {% endif %}
-    </div>
+        </tbody>
+    </table>
+
+    <hr style="margin: 2em 0;">
 
     <h3>ToDoリスト</h3>
     <form method="GET">
@@ -51,7 +44,9 @@
         <input type="submit" value="日付で表示" style="width: auto; padding: 5px 10px;">
     </form>
     <table>
-        <thead><tr><th>完了</th><th>教科</th><th>教材</th><th>ページ</th><th>目標</th><th>実績</th></tr></thead>
+        <thead>
+            <tr><th>完了</th><th>教科</th><th>教材</th><th>ページ</th><th>目標</th><th>実績</th><th>休憩</th></tr>
+        </thead>
         <tbody>
         {% for todo in todos %}
         <tr>
@@ -61,9 +56,10 @@
             <td>{{ todo.start_page }} - {{ todo.end_page }}</td>
             <td>{{ todo.target_hour }}h {{ todo.target_min }}m</td>
             <td>{{ todo.actual_hour }}h {{ todo.actual_min }}m</td>
+            <td>{{ (todo.break_seconds or 0) // 60 }}分 {{ (todo.break_seconds or 0) % 60 }}秒</td>
         </tr>
         {% else %}
-        <tr><td colspan="6">この日のToDoはありません。</td></tr>
+        <tr><td colspan="7">この日のToDoはありません。</td></tr>
         {% endfor %}
         </tbody>
     </table>

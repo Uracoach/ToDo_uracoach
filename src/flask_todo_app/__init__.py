@@ -4,20 +4,21 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
-# グローバルな拡張機能オブジェクトを作成
 db = SQLAlchemy()
 migrate = Migrate()
 
-# 共通で使うパスワードハッシュ化関数
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-# アプリケーションファクトリ
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
+    
+    instance_path = os.environ.get('RENDER_INSTANCE_DIR', app.instance_path)
+    db_path = os.path.join(instance_path, 'todo.db')
+
     app.config.from_mapping(
-        SECRET_KEY='dev',
-        SQLALCHEMY_DATABASE_URI=f"sqlite:///{os.path.join(app.instance_path, 'todo.db')}",
+        SECRET_KEY=os.environ.get('SECRET_KEY', 'dev'),
+        SQLALCHEMY_DATABASE_URI=f"sqlite:///{db_path}",
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
     )
 
@@ -27,19 +28,18 @@ def create_app(test_config=None):
         app.config.from_mapping(test_config)
 
     try:
-        os.makedirs(app.instance_path)
+        os.makedirs(instance_path)
     except OSError:
         pass
     
-    # アプリケーションと各拡張機能を連携
     db.init_app(app)
     migrate.init_app(app, db)
 
-    # モデルとブループリントをインポートして登録
     from . import models
     from . import routes
     app.register_blueprint(routes.main.bp)
     app.register_blueprint(routes.admin.bp)
+    app.register_blueprint(routes.timer.bp) # ← この行を追加
 
     @app.after_request
     def add_header(response):

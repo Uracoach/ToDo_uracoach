@@ -17,6 +17,8 @@
                 <div class="nav-links">
                     {% if session['student'] %}
                         <span>ようこそ, {{ session['student'] }} さん</span>
+                        <a href="{{ url_for('main.student_view', student_name=session['student']) }}">ToDoリスト</a>
+                        <a href="{{ url_for('timer.timer_page') }}">タイマー</a>
                         <a href="{{ url_for('main.logout') }}">ログアウト</a>
                     {% elif 'admin' in session %}
                         <a href="{{ url_for('admin.dashboard') }}">ダッシュボード</a>
@@ -25,7 +27,7 @@
                         <a href="{{ url_for('main.login') }}">ログイン</a>
                     {% endif %}
                     
-                    {% if 'admin' not in session %}
+                    {% if 'admin' not in session and 'student' not in session %}
                     <a href="{{ url_for('admin.admin_login') }}">管理者ページ</a>
                     {% endif %}
                 </div>

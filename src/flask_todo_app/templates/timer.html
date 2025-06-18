@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% block title %}学習タイマー{% endblock %}
+
+{% block content %}
+<style>
+    /* ... 既存のスタイルは変更なし ... */
+    .timer-container { text-align: center; background: #2c3e50; color: white; padding: 2em; border-radius: 15px; }
+    .todo-selector { margin-bottom: 2em; }
+    .todo-selector select { width: 80%; padding: 10px; font-size: 1.1em; border-radius: 8px; border: 1px solid #ccc; }
+    .timer-display { font-family: 'Roboto Mono', monospace; font-size: 5em; font-weight: bold; margin: 0.2em 0; }
+    .break-timer-display { font-size: 1.5em; opacity: 0.7; height: 2em; } /* 高さを確保 */
+    .timer-controls button { font-size: 1.5em; padding: 15px 30px; margin: 10px; border-radius: 10px; border: none; color: white; cursor: pointer; transition: all 0.3s ease; }
+    .start-btn { background-color: #27ae60; }
+    .start-btn:hover { background-color: #2ecc71; }
+    .stop-btn { background-color: #c0392b; }
+    .stop-btn:hover { background-color: #e74c3c; }
+    .break-btn { background-color: #3498db; }
+    .break-btn:hover { background-color: #5dade2; }
+    .timer-controls button:disabled { background-color: #7f8c8d; cursor: not-allowed; }
+</style>
+
+<div class="timer-container">
+    <h2><i class="fa-solid fa-stopwatch"></i> 学習タイマー</h2>
+    <div class="todo-selector">
+        <label for="todo-select">今日の未完了ToDoから計測するタスクを選択:</label><br><br>
+        <select id="todo-select">
+            {% if todays_todos %}
+                <option value="">選択してください</option>
+                {% for todo in todays_todos %}
+                <option value="{{ todo.id }}">{{ todo.subject }} - {{ todo.material or '詳細なし' }}</option>
+                {% endfor %}
+            {% else %}
+                <option value="" disabled>今日の未完了ToDoはありません</option>
+            {% endif %}
+        </select>
+    </div>
+
+    <div id="main-timer" class="timer-display">00:00:00</div>
+    <div id="break-timer" class="timer-display break-timer-display"></div>
+
+    <div class="timer-controls">
+        <button id="startBtn" class="start-btn"><i class="fa-solid fa-play"></i> 開始</button>
+        <button id="breakBtn" class="break-btn" disabled>休憩</button>
+        <button id="stopBtn" class="stop-btn" disabled>終了</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const studentName = '{{ student_name }}';
+    const todoSelect = document.getElementById('todo-select');
+    const mainTimerDisplay = document.getElementById('main-timer');
+    const breakTimerDisplay = document.getElementById('break-timer');
+    const startBtn = document.getElementById('startBtn');
+    const breakBtn = document.getElementById('breakBtn');
+    const stopBtn = document.getElementById('stopBtn');
+
+    let mainSeconds = 0, breakSeconds = 0;
+    let mainInterval, breakInterval;
+    let isMainRunning = false;
+
+    function formatTime(seconds) {
+        const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
+        const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+        const s = String(seconds % 60).padStart(2, '0');
+        return `${h}:${m}:${s}`;
+    }
+
+    function resetAll() {
+        clearInterval(mainInterval);
+        clearInterval(breakInterval);
+        mainSeconds = 0;
+        breakSeconds = 0;
+        isMainRunning = false;
+        mainTimerDisplay.textContent = '00:00:00';
+        breakTimerDisplay.textContent = '';
+        startBtn.disabled = false;
+        breakBtn.disabled = true;
+        breakBtn.textContent = '休憩';
+        stopBtn.disabled = true;
+        todoSelect.disabled = false;
+        todoSelect.value = "";
+    }
+
+    startBtn.addEventListener('click', () => {
+        if (!todoSelect.value) {
+            alert('計測するToDoを選択してください。');
+            return;
+        }
+        isMainRunning = true;
+        startBtn.disabled = true;
+        breakBtn.disabled = false;
+        stopBtn.disabled = false;
+        todoSelect.disabled = true;
+
+        mainInterval = setInterval(() => {
+            mainSeconds++;
+            mainTimerDisplay.textContent = formatTime(mainSeconds);
+        }, 1000);
+    });
+
+    breakBtn.addEventListener('click', () => {
+        if (isMainRunning) { // 休憩開始
+            isMainRunning = false;
+            clearInterval(mainInterval);
+            breakTimerDisplay.textContent = `休憩中: ${formatTime(breakSeconds)}`;
+            breakBtn.textContent = '休憩終了';
+            
+            breakInterval = setInterval(() => {
+                breakSeconds++;
+                breakTimerDisplay.textContent = `休憩中: ${formatTime(breakSeconds)}`;
+            }, 1000);
+        } else { // 休憩終了
+            isMainRunning = true;
+            clearInterval(breakInterval);
+            breakBtn.textContent = '休憩';
+
+            mainInterval = setInterval(() => {
+                mainSeconds++;
+                mainTimerDisplay.textContent = formatTime(mainSeconds);
+            }, 1000);
+        }
+    });
+
+    stopBtn.addEventListener('click', () => {
+        clearInterval(mainInterval);
+        clearInterval(breakInterval);
+
+        if (!confirm(`${formatTime(mainSeconds)} の学習を記録して、このタスクを完了しますか？\n（休憩時間: ${formatTime(breakSeconds)}）`)) {
+            // キャンセルされたら何もしない（リセットされる）
+            resetAll();
+            return;
+        }
+        
+        const todoId = todoSelect.value;
+        
+        fetch('/timer/log_time', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ 
+                todo_id: todoId, 
+                seconds: mainSeconds,
+                break_seconds: breakSeconds // 休憩時間を追加
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                // 完了したToDoを選択肢から削除
+                todoSelect.querySelector(`option[value="${todoId}"]`).remove();
+            } else {
+                alert('エラー: ' + data.error);
+            }
+            resetAll();
+        });
+    });
+});
+</script>
+{% endblock %}

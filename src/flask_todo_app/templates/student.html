@@ -84,7 +84,6 @@
                     {% endif %}
                 </td>
                 <td>
-                    <a href="{{ url_for('main.edit_todo', todo_id=todo.id) }}">編集</a>
                     <a href="#" class="delete-link" data-id="{{ todo.id }}">削除</a>
                 </td>
             </tr>
@@ -114,7 +113,6 @@
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // ToDo追加の非同期処理
     const addForm = document.getElementById('add-todo-form');
     if (addForm) {
         addForm.addEventListener('submit', function(event) {
@@ -138,7 +136,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ToDo完了の非同期処理
     const todoListBody = document.getElementById('todo-list-body');
     if (todoListBody) {
         todoListBody.addEventListener('submit', function(event) {
@@ -164,7 +161,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // 削除リンクの非同期処理
     document.addEventListener('click', function(event) {
         if (event.target.classList.contains('delete-link')) {
             event.preventDefault();
