@@ -24,7 +24,7 @@
                         <a href="{{ url_for('admin.dashboard') }}">ダッシュボード</a>
                         <a href="{{ url_for('main.logout') }}">ログアウト</a>
                     {% else %}
-                        <a href="{{ url_for('main.login') }}">ログイン</a>
+                        <a href="{{ url_for('main.login') }}">生徒ログイン</a>
                     {% endif %}
                     
                     {% if 'admin' not in session and 'student' not in session %}
@@ -49,6 +49,33 @@
         </main>
     </div>
 
-    {% block scripts %}{% endblock %}
+    {% block scripts %}
+    <script>
+    // パスワード表示切替機能
+    function setupPasswordToggle() {
+        document.querySelectorAll('.password-wrapper').forEach(wrapper => {
+            if (wrapper.querySelector('.password-toggle')) { return; }
+            const input = wrapper.querySelector('input[type="password"], input[type="text"]');
+            if (input) {
+                const toggle = document.createElement('button');
+                toggle.type = 'button';
+                toggle.className = 'password-toggle';
+                toggle.innerHTML = '<i class="fa-solid fa-eye"></i>';
+                toggle.addEventListener('click', () => {
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        toggle.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+                    } else {
+                        input.type = 'password';
+                        toggle.innerHTML = '<i class="fa-solid fa-eye"></i>';
+                    }
+                });
+                wrapper.appendChild(toggle);
+            }
+        });
+    }
+    document.addEventListener('DOMContentLoaded', setupPasswordToggle);
+    </script>
+    {% endblock %}
 </body>
 </html>
