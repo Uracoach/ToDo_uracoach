@@ -13,21 +13,30 @@ def hash_password(password):
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
 
-    # デフォルトの設定
+    # デフォルトの基本設定
     app.config.from_mapping(
         SECRET_KEY='dev',
         SQLALCHEMY_DATABASE_URI=f"sqlite:///{os.path.join(app.instance_path, 'todo.db')}",
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
     )
 
-    if test_config is not None:
+    if test_config is None:
+        # この設定は、WSGIファイルで渡される本番用の設定で上書きされます
+        app.config.from_pyfile('config.py', silent=True)
+    else:
         # テスト用の設定で上書き
         app.config.from_mapping(test_config)
 
+    try:
+        os.makedirs(app.instance_path)
+    except OSError:
+        pass
+    
     db.init_app(app)
     migrate.init_app(app, db)
 
-    from . import models, routes
+    from . import models
+    from . import routes
     app.register_blueprint(routes.main.bp)
     app.register_blueprint(routes.admin.bp)
 
