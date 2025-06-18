@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}週テスト作成{% endblock %}
+{% block content %}
+<h2>週テスト作成</h2>
+<p>ここで作成したテストは、全生徒が挑戦できる「週テスト」として登録されます。</p>
+<form method="POST">
+    <label for="title">テストのタイトル:</label><br>
+    <input type="text" name="title" id="title" required><br>
+
+    <label for="content">単元・内容:</label><br>
+    <textarea name="content" id="content" rows="4" style="width: 98%;" placeholder="例：中学2年数学 連立方程式の文章問題、速さ・道のり・時間の応用" required></textarea><br>
+
+    <label for="q_type">問題形式:</label>
+    <select name="q_type" id="q_type">
+        <option value="一問一答形式">一問一答</option>
+        <option value="記述問題">記述</option>
+    </select><br>
+
+    <label for="ans_type">解答形式:</label>
+    <select name="ans_type" id="ans_type">
+        <option value="4択問題（A,B,C,D）">4択</option>
+        <option value="解答欄のみ">解答欄のみ</option>
+    </select><br>
+    <br>
+    <input type="submit" value="AIでテストを作成する">
+</form>
+{% endblock %}

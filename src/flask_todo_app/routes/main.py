@@ -32,98 +32,6 @@ def logout():
     session.pop('admin', None)
     return redirect(url_for('main.login'))
 
-@bp.route('/student/<student_name>')
-def student_view(student_name):
-    if ('student' not in session or session['student'] != student_name):
-        return redirect(url_for('main.login'))
-    
-    student = Student.query.get_or_404(student_name)
-    
-    # 今週のミッションを取得
-    today = date.today()
-    start_of_week = today - timedelta(days=today.weekday())
-    week_str = start_of_week.strftime('%Y-%m-%d')
-    missions = Mission.query.filter_by(student_name=student_name, week_start_date=week_str).all()
-    
-    # ページ表示ロジック
-    today_dt = date.today()
-    date_str = request.args.get('date', today_dt.strftime('%Y-%m-%d'))
-    current_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-    prev_date = (current_date - timedelta(days=1)).strftime('%Y-%m-%d')
-    next_date = (current_date + timedelta(days=1)).strftime('%Y-%m-%d')
-    
-    todos = Todo.query.filter_by(student_name=student_name, date=date_str).order_by(Todo.id).all()
-    
-    return render_template('student.html', todos=todos, student_name=student_name, 
-                           date=date_str, prev_date=prev_date, next_date=next_date,
-                           missions=missions)
-
-@bp.route('/api/add_todo', methods=['POST'])
-def add_todo_api():
-    if 'student' not in session:
-        return jsonify({'success': False, 'error': 'Authentication required'}), 401
-    
-    student_name = session['student']
-    subject = request.form.get('subject')
-    if not subject:
-        return jsonify({'success': False, 'error': '教科が選択されていません。'}), 400
-
-    new_todo = Todo(
-        student_name=student_name,
-        date=request.form.get('date'),
-        subject=subject,
-        material=request.form.get('material', ''),
-        start_page=int(request.form.get('start_page') or 0),
-        end_page=int(request.form.get('end_page') or 0),
-        target_hour=int(request.form.get('target_hour', 0)),
-        target_min=int(request.form.get('target_min', 0))
-    )
-    db.session.add(new_todo)
-    db.session.commit()
-
-    return jsonify({
-        'success': True,
-        'todo': {
-            'id': new_todo.id,
-            'subject': new_todo.subject,
-            'material': new_todo.material,
-            'start_page': new_todo.start_page,
-            'end_page': new_todo.end_page,
-            'target_hour': new_todo.target_hour,
-            'target_min': new_todo.target_min,
-            'completed': new_todo.completed
-        }
-    })
-
-@bp.route('/api/update_todo/<int:todo_id>', methods=['POST'])
-def update_todo_api(todo_id):
-    if 'student' not in session:
-        return jsonify({'success': False, 'error': 'Authentication required'}), 401
-    
-    todo = Todo.query.get_or_404(todo_id)
-    if todo.author.name == session['student']:
-        todo.actual_hour = int(request.form.get('actual_hour', 0))
-        todo.actual_min = int(request.form.get('actual_min', 0))
-        todo.completed = True
-        db.session.commit()
-        return jsonify({
-            'success': True,
-            'message': 'ToDoを完了しました！',
-            'actual_hour': todo.actual_hour,
-            'actual_min': todo.actual_min
-        })
-    return jsonify({'success': False, 'error': 'Permission denied'}), 403
-
-@bp.route('/api/delete_todo/<int:todo_id>', methods=['DELETE'])
-def delete_todo_api(todo_id):
-    if 'student' not in session: return jsonify({'success': False, 'error': 'Authentication required'}), 401
-    todo = Todo.query.get_or_404(todo_id)
-    if todo.author.name == session['student']:
-        db.session.delete(todo)
-        db.session.commit()
-        return jsonify({'success': True})
-    return jsonify({'success': False, 'error': 'Permission denied'}), 403
-
 @bp.route('/student/<student_name>/chart')
 def student_chart(student_name):
     if ('student' not in session or session['student'] != student_name) and 'admin' not in session:
@@ -240,3 +148,86 @@ def chart_data(student_name):
         'labels': labels,
         'datasets': list(datasets.values())
     })
+
+@bp.route('/student/<student_name>', methods=['GET', 'POST'])
+def student_view(student_name):
+    if ('student' not in session or session['student'] != student_name) and 'admin' not in session:
+        return redirect(url_for('main.login'))
+    
+    student = Student.query.get_or_404(student_name)
+    
+    today = date.today()
+    start_of_week = today - timedelta(days=today.weekday())
+    week_str = start_of_week.strftime('%Y-%m-%d')
+    missions = Mission.query.filter_by(student_name=student_name, week_start_date=week_str).all()
+    completed_mission_ids = {m.id for m in student.completed_missions}
+    
+    week_todos = Todo.query.filter(
+        Todo.student_name == student_name,
+        Todo.completed == True,
+        Todo.date.between(start_of_week.strftime('%Y-%m-%d'), today.strftime('%Y-%m-%d'))
+    ).all()
+    
+    weekly_subject_progress = {s: 0 for s in ["国語", "数学", "理科", "社会", "英語"]}
+    for todo in week_todos:
+        if todo.subject in weekly_subject_progress:
+            weekly_subject_progress[todo.subject] += todo.actual_hour * 60 + todo.actual_min
+    
+    today_dt = date.today()
+    date_str = request.args.get('date', today_dt.strftime('%Y-%m-%d'))
+    current_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    prev_date = (current_date - timedelta(days=1)).strftime('%Y-%m-%d')
+    next_date = (current_date + timedelta(days=1)).strftime('%Y-%m-%d')
+    
+    todos = Todo.query.filter_by(student_name=student_name, date=date_str).order_by(Todo.id).all()
+    
+    return render_template('student.html', todos=todos, student_name=student_name, 
+                           date=date_str, prev_date=prev_date, next_date=next_date,
+                           missions=missions, weekly_progress=weekly_subject_progress,
+                           completed_mission_ids=completed_mission_ids)
+
+@bp.route('/api/add_todo', methods=['POST'])
+def add_todo_api():
+    if 'student' not in session:
+        return jsonify({'success': False, 'error': 'Authentication required'}), 401
+    
+    student_name = session['student']
+    subject = request.form.get('subject')
+    if not subject:
+        return jsonify({'success': False, 'error': '教科が選択されていません。'}), 400
+
+    new_todo = Todo(
+        student_name=student_name,
+        date=request.form.get('date'),
+        subject=subject,
+        material=request.form.get('material', ''),
+        start_page=int(request.form.get('start_page') or 0),
+        end_page=int(request.form.get('end_page') or 0),
+        target_hour=int(request.form.get('target_hour', 0)),
+        target_min=int(request.form.get('target_min', 0))
+    )
+    db.session.add(new_todo)
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'todo': { 'id': new_todo.id, 'subject': new_todo.subject, 'material': new_todo.material,
+                  'start_page': new_todo.start_page, 'end_page': new_todo.end_page,
+                  'target_hour': new_todo.target_hour, 'target_min': new_todo.target_min,
+                  'completed': new_todo.completed }
+    })
+
+@bp.route('/api/update_todo/<int:todo_id>', methods=['POST'])
+def update_todo_api(todo_id):
+    if 'student' not in session:
+        return jsonify({'success': False, 'error': 'Authentication required'}), 401
+    
+    todo = Todo.query.get_or_404(todo_id)
+    if todo.author.name == session['student']:
+        todo.actual_hour = int(request.form.get('actual_hour', 0))
+        todo.actual_min = int(request.form.get('actual_min', 0))
+        todo.completed = True
+        db.session.commit()
+        return jsonify({ 'success': True, 'message': 'ToDoを完了しました！',
+                         'actual_hour': todo.actual_hour, 'actual_min': todo.actual_min })
+    return jsonify({'success': False, 'error': 'Permission denied'}), 403

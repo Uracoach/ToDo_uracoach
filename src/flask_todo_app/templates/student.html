@@ -19,7 +19,7 @@
     {% if missions %}
         {% for mission in missions %}
             <div>
-                {% if mission.completed %}
+                {% if mission.id in completed_mission_ids %}
                     <div class="mission-complete-effect">COMPLETE!!</div>
                     <p><s><strong>{{ mission.description }}</strong></s></p>
                 {% else %}
@@ -96,6 +96,7 @@
 {% endblock %}
 
 {% block scripts %}
+    {{ super() }}
 <style>
 @keyframes complete-don {
     0% { transform: scale(0) rotate(720deg); opacity: 0; }
@@ -200,7 +201,6 @@ function createTodoRow(todo) {
             </form>
         </td>
         <td>
-            <a href="/edit_todo/${todo.id}">編集</a>
             <a href="#" class="delete-link" data-id="${todo.id}">削除</a>
         </td>
     `;

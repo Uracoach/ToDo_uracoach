@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block title %}今日のテスト{% endblock %}
+
+{% block content %}
+<style>
+    .quiz-container { max-width: 700px; margin: auto; background: white; padding: 2em; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    .question-box { display: none; }
+    .question-box.active { display: block; }
+    .question-text { font-size: 1.5em; margin-bottom: 1em; }
+    .options-list { list-style-type: none; padding: 0; }
+    .options-list li { margin-bottom: 1em; }
+    .options-list label { display: block; padding: 1em; border: 1px solid #ccc; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; }
+    .options-list label:hover { background-color: #f0f8ff; }
+    .options-list input[type="radio"] { display: none; }
+    .options-list input[type="radio"]:checked + span { font-weight: bold; color: #007bff; }
+    .quiz-nav { text-align: right; margin-top: 1em; }
+    .result-screen { text-align: center; }
+    .result-screen h2 { font-size: 2em; }
+    .result-score { font-size: 4em; font-weight: bold; color: #27ae60; }
+</style>
+
+<div class="quiz-container" data-test-id="{{ test.id }}">
+    <div id="quiz-area">
+        {% for q in questions %}
+        <div class="question-box" id="question-{{ loop.index0 }}">
+            <p class="question-progress">問題 {{ loop.index }} / {{ questions|length }}</p>
+            <p class="question-text">{{ q.question_text }}</p>
+            <ul class="options-list">
+                <li><label><input type="radio" name="q-{{ q.id }}" value="A"> <span>A: {{ q.option_a }}</span></label></li>
+                <li><label><input type="radio" name="q-{{ q.id }}" value="B"> <span>B: {{ q.option_b }}</span></label></li>
+                <li><label><input type="radio" name="q-{{ q.id }}" value="C"> <span>C: {{ q.option_c }}</span></label></li>
+                <li><label><input type="radio" name="q-{{ q.id }}" value="D"> <span>D: {{ q.option_d }}</span></label></li>
+            </ul>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div id="result-screen" class="result-screen" style="display: none;">
+        <h2>テスト結果</h2>
+        <p class="result-score">8/10</p>
+        <p id="result-message"></p>
+        <a href="{{ url_for('main.student_view', student_name=session['student']) }}">ToDoリストに戻る</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const quizContainer = document.querySelector('.quiz-container');
+    const questions = document.querySelectorAll('.question-box');
+    const resultScreen = document.getElementById('result-screen');
+    const quizArea = document.getElementById('quiz-area');
+    
+    let currentQuestionIndex = 0;
+    const userAnswers = {};
+
+    function showQuestion(index) {
+        questions.forEach((q, i) => {
+            q.classList.toggle('active', i === index);
+        });
+    }
+
+    quizArea.addEventListener('change', event => {
+        if (event.target.type === 'radio') {
+            const questionId = event.target.name.split('-')[1];
+            userAnswers[questionId] = event.target.value;
+            
+            // 少し待ってから次の問題へ
+            setTimeout(() => {
+                if (currentQuestionIndex < questions.length - 1) {
+                    currentQuestionIndex++;
+                    showQuestion(currentQuestionIndex);
+                } else {
+                    // 全ての問題に解答したら結果を送信
+                    submitResults();
+                }
+            }, 300);
+        }
+    });
+
+    async function submitResults() {
+        quizArea.style.display = 'none';
+        const testId = quizContainer.dataset.testId;
+
+        const response = await fetch("{{ url_for('ai_test.submit_test') }}", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ test_id: testId, answers: userAnswers })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            resultScreen.querySelector('.result-score').textContent = `${data.score} / ${data.total}`;
+            resultScreen.querySelector('#result-message').textContent = data.message;
+            resultScreen.style.display = 'block';
+        } else {
+            alert('エラー: ' + data.error);
+        }
+    }
+
+    // 最初の問題を表示
+    showQuestion(0);
+});
+</script>
+{% endblock %}

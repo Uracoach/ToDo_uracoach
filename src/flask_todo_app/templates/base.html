@@ -8,30 +8,33 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 <body>
+    <div id="mySidenav" class="sidenav">
+        <a href="javascript:void(0)" class="close-btn" id="closeBtn">&times;</a>
+        
+        {% if session['student'] %}
+            <a href="{{ url_for('main.student_view', student_name=session['student']) }}">ToDoリスト</a>
+            <a href="{{ url_for('timer.timer_page') }}">タイマー</a>
+            <a href="{{ url_for('ai_test.daily_test') }}">今日のテスト</a>
+            <a href="{{ url_for('ai_test.weekly_test_list') }}">週テスト</a>
+            <a href="{{ url_for('ai_test.test_history') }}">テスト履歴</a>
+            <a href="{{ url_for('main.logout') }}">ログアウト</a>
+        {% elif 'admin' in session %}
+            <a href="{{ url_for('admin.dashboard') }}">ダッシュボード</a>
+            <a href="{{ url_for('admin.create_weekly_test') }}">週テスト作成</a>
+            <a href="{{ url_for('main.logout') }}">ログアウト</a>
+        {% else %}
+            <a href="{{ url_for('main.login') }}">ログイン</a>
+            <a href="{{ url_for('admin.admin_login') }}">管理者ページ</a>
+        {% endif %}
+    </div>
+
     <div class="content-wrapper">
-        <header>
-            <nav class="nav">
-                <a href="{{ url_for('main.home') }}">
-                    <img src="{{ url_for('static', filename='uracoach_logo.png') }}" alt="ホーム" style="height: 30px; vertical-align: middle;">
-                </a>
-                <div class="nav-links">
-                    {% if session['student'] %}
-                        <span>ようこそ, {{ session['student'] }} さん</span>
-                        <a href="{{ url_for('main.student_view', student_name=session['student']) }}">ToDoリスト</a>
-                        <a href="{{ url_for('timer.timer_page') }}">タイマー</a>
-                        <a href="{{ url_for('main.logout') }}">ログアウト</a>
-                    {% elif 'admin' in session %}
-                        <a href="{{ url_for('admin.dashboard') }}">ダッシュボード</a>
-                        <a href="{{ url_for('main.logout') }}">ログアウト</a>
-                    {% else %}
-                        <a href="{{ url_for('main.login') }}">ログイン</a>
-                    {% endif %}
-                    
-                    {% if 'admin' not in session and 'student' not in session %}
-                    <a href="{{ url_for('admin.admin_login') }}">管理者ページ</a>
-                    {% endif %}
-                </div>
-            </nav>
+        <header class="header">
+            <button class="menu-btn" id="openBtn">&#9776;</button>
+            <a href="{{ url_for('main.home') }}">
+                <img src="{{ url_for('static', filename='uracoach_logo.png') }}" alt="ホーム" class="header-logo">
+            </a>
+            <div></div> 
         </header>
 
         <div class="flash-messages">
@@ -49,6 +52,62 @@
         </main>
     </div>
 
-    {% block scripts %}{% endblock %}
+    {% block scripts %}
+    <script>
+        // ページの全てのHTMLが読み込まれてから、以下の処理を実行する
+        document.addEventListener('DOMContentLoaded', function() {
+
+            // --- メニュー開閉機能 ---
+            const openBtn = document.getElementById('openBtn');
+            const closeBtn = document.getElementById('closeBtn');
+            const sidenav = document.getElementById('mySidenav');
+
+            if (openBtn && sidenav) {
+                openBtn.addEventListener('click', function() {
+                    sidenav.style.width = "250px";
+                });
+            }
+
+            if (closeBtn && sidenav) {
+                closeBtn.addEventListener('click', function() {
+                    sidenav.style.width = "0";
+                });
+            }
+
+            // --- パスワード表示切替機能 ---
+            const wrappers = document.querySelectorAll('.password-wrapper');
+            wrappers.forEach(wrapper => {
+                const input = wrapper.querySelector('input[type="password"]');
+                const toggle = wrapper.querySelector('.password-toggle');
+
+                // この機能は、以前のコードで既に正しく動作している可能性がありますが、
+                // 念のため、より安全な形でここに再記述します。
+                // もしボタンがなければ新しく作成します。
+                let currentToggle = toggle;
+                if (!currentToggle) {
+                    currentToggle = document.createElement('button');
+                    currentToggle.type = 'button';
+                    currentToggle.className = 'password-toggle';
+                    currentToggle.innerHTML = '<i class="fa-solid fa-eye"></i>';
+                    if(input) {
+                       input.parentNode.appendChild(currentToggle);
+                    }
+                }
+                
+                if (input && currentToggle) {
+                    currentToggle.addEventListener('click', () => {
+                        if (input.type === 'password') {
+                            input.type = 'text';
+                            currentToggle.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+                        } else {
+                            input.type = 'password';
+                            currentToggle.innerHTML = '<i class="fa-solid fa-eye"></i>';
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+    {% endblock %}
 </body>
 </html>

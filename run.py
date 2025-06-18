@@ -1,10 +1,11 @@
-# run.py
 from flask_todo_app import create_app
+from dotenv import load_dotenv
 
-# アプリケーションファクトリからアプリケーションインスタンスを作成
+# .flaskenvファイルを読み込む
+load_dotenv()
+
 app = create_app()
 
 if __name__ == "__main__":
     # debug=Trueでデバッグモードを有効にする
-    # host='0.0.0.0'は、外部からのアクセスも許可する場合に指定
     app.run(debug=True)
