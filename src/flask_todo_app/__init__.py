@@ -11,23 +11,20 @@ def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 def create_app(test_config=None):
-    app = Flask(__name__, instance_relative_config=True)
-
-    # デフォルトの基本設定
+    app = Flask(__name__, instance_folder=os.path.join(os.getcwd(), 'instance'))
+    
     app.config.from_mapping(
         SECRET_KEY='dev',
         SQLALCHEMY_DATABASE_URI=f"sqlite:///{os.path.join(app.instance_path, 'todo.db')}",
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
     )
 
-    if test_config is None:
-        # この設定は、WSGIファイルで渡される本番用の設定で上書きされます
-        app.config.from_pyfile('config.py', silent=True)
-    else:
-        # テスト用の設定で上書き
+    if test_config is not None:
         app.config.from_mapping(test_config)
 
     try:
+        if not os.path.isabs(app.instance_path):
+             app.instance_path = os.path.join(app.root_path, app.instance_path)
         os.makedirs(app.instance_path)
     except OSError:
         pass
@@ -39,6 +36,8 @@ def create_app(test_config=None):
     from . import routes
     app.register_blueprint(routes.main.bp)
     app.register_blueprint(routes.admin.bp)
+    # --- ★★★ 不足していたこの行を追加しました ★★★ ---
+    app.register_blueprint(routes.timer.bp)
 
     @app.after_request
     def add_header(response):
