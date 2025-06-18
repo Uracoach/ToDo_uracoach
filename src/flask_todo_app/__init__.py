@@ -13,6 +13,7 @@ def hash_password(password):
 def create_app(test_config=None):
     app = Flask(__name__, instance_folder=os.path.join(os.getcwd(), 'instance'))
     
+    # デフォルトの設定
     app.config.from_mapping(
         SECRET_KEY='dev',
         SQLALCHEMY_DATABASE_URI=f"sqlite:///{os.path.join(app.instance_path, 'todo.db')}",
@@ -20,9 +21,11 @@ def create_app(test_config=None):
     )
 
     if test_config is not None:
+        # WSGIファイルなどから渡された本番用の設定で上書き
         app.config.from_mapping(test_config)
 
     try:
+        # instanceフォルダのパスが絶対パスか確認し、なければ作成
         if not os.path.isabs(app.instance_path):
              app.instance_path = os.path.join(app.root_path, app.instance_path)
         os.makedirs(app.instance_path)
