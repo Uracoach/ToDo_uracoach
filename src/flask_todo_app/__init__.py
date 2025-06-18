@@ -12,9 +12,16 @@ def hash_password(password):
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
+
+    instance_path = os.environ.get('RENDER_INSTANCE_DIR', app.instance_path)
+    if not os.path.isabs(instance_path):
+        instance_path = os.path.join(app.root_path, instance_path)
+    
+    db_path = os.path.join(instance_path, 'todo.db')
+
     app.config.from_mapping(
         SECRET_KEY=os.environ.get('SECRET_KEY', 'dev'),
-        SQLALCHEMY_DATABASE_URI=f"sqlite:///{os.path.join(app.instance_path, 'todo.db')}",
+        SQLALCHEMY_DATABASE_URI=f"sqlite:///{db_path}",
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
     )
 
@@ -22,19 +29,17 @@ def create_app(test_config=None):
         app.config.from_mapping(test_config)
 
     try:
-        os.makedirs(app.instance_path)
+        os.makedirs(instance_path)
     except OSError:
         pass
     
     db.init_app(app)
     migrate.init_app(app, db)
 
-    from . import models
-    from . import routes
+    from . import models, routes
     app.register_blueprint(routes.main.bp)
     app.register_blueprint(routes.admin.bp)
     app.register_blueprint(routes.timer.bp)
-    app.register_blueprint(routes.ai_test.bp) # ← この行を追加
 
     @app.after_request
     def add_header(response):
