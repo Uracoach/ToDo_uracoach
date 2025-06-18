@@ -11,7 +11,13 @@ def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 def create_app(test_config=None):
-    app = Flask(__name__, instance_folder=os.path.join(os.getcwd(), 'instance'))
+    # --- ★★★ ここからが今回の修正箇所です ★★★ ---
+    # instance_folder引数をなくし、instance_relative_config=True を使用します
+    app = Flask(__name__, instance_relative_config=True)
+    
+    # instanceフォルダのパスを明示的に設定
+    app.instance_path = os.path.join(os.path.dirname(app.root_path), 'instance')
+    # --- ★★★ 修正箇所ここまで ★★★ ---
     
     # デフォルトの設定
     app.config.from_mapping(
@@ -25,9 +31,6 @@ def create_app(test_config=None):
         app.config.from_mapping(test_config)
 
     try:
-        # instanceフォルダのパスが絶対パスか確認し、なければ作成
-        if not os.path.isabs(app.instance_path):
-             app.instance_path = os.path.join(app.root_path, app.instance_path)
         os.makedirs(app.instance_path)
     except OSError:
         pass
@@ -39,7 +42,6 @@ def create_app(test_config=None):
     from . import routes
     app.register_blueprint(routes.main.bp)
     app.register_blueprint(routes.admin.bp)
-    # --- ★★★ 不足していたこの行を追加しました ★★★ ---
     app.register_blueprint(routes.timer.bp)
 
     @app.after_request
