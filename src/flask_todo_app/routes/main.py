@@ -10,20 +10,29 @@ bp = Blueprint('main', __name__)
 def home():
     if 'student' in session:
         return redirect(url_for('main.student_view', student_name=session['student']))
+    if 'admin' in session:
+        return redirect(url_for('admin.dashboard'))
     return redirect(url_for('main.login'))
 
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
+    if 'student' in session or 'admin' in session:
+        return redirect(url_for('main.home'))
+        
     if request.method == 'POST':
         student_name = request.form['student']
         password = request.form['password']
+        
         user = Student.query.filter_by(name=student_name).first()
+        
         if user and user.password == hash_password(password):
+            session.clear()
             session['student'] = user.name
             session.permanent = False
             return redirect(url_for('main.student_view', student_name=user.name))
         else:
             flash('名前またはパスワードが正しくありません。', 'error')
+            
     return render_template('login.html')
 
 @bp.route('/logout')
@@ -42,6 +51,7 @@ def student_view(student_name):
     today = date.today()
     start_of_week = today - timedelta(days=today.weekday())
     week_str = start_of_week.strftime('%Y-%m-%d')
+    
     missions = Mission.query.filter_by(student_name=student_name, week_start_date=week_str).all()
     
     today_dt = date.today()
@@ -61,8 +71,8 @@ def add_todo_api():
     if 'student' not in session:
         return jsonify({'success': False, 'error': 'Authentication required'}), 401
     
-    student_name = session['student']
     data = request.get_json()
+    student_name = session['student']
     subject = data.get('subject')
     if not subject:
         return jsonify({'success': False, 'error': '教科が選択されていません。'}), 400
@@ -80,18 +90,10 @@ def add_todo_api():
     db.session.add(new_todo)
     db.session.commit()
     
-    # JavaScript側で新しい行を生成するために、ToDoの情報を返す
+    flash(f"ToDo「{subject}」を追加しました！", "success")
     return jsonify({
         'success': True,
-        'todo': {
-            'id': new_todo.id,
-            'subject': new_todo.subject,
-            'material': new_todo.material,
-            'start_page': new_todo.start_page,
-            'end_page': new_todo.end_page,
-            'target_hour': new_todo.target_hour,
-            'target_min': new_todo.target_min
-        }
+        'redirect_url': url_for('main.student_view', student_name=student_name, date=data.get('date'))
     })
 
 @bp.route('/api/update_todo/<int:todo_id>', methods=['POST'])
@@ -106,9 +108,9 @@ def update_todo_api(todo_id):
         todo.actual_min = int(data.get('actual_min', 0))
         todo.completed = True
         db.session.commit()
+        flash(f"ToDo「{todo.subject}」を完了しました！お疲れ様でした。", "success")
         return jsonify({
             'success': True,
-            'message': 'ToDoを完了しました！',
             'actual_hour': todo.actual_hour,
             'actual_min': todo.actual_min
         })
@@ -155,6 +157,7 @@ def show_summary(student_name):
 
     first_todo = db.session.query(func.min(Todo.date)).filter_by(student_name=student_name, completed=True).scalar()
     total_days = (today - datetime.strptime(first_todo, '%Y-%m-%d').date()).days + 1 if first_todo else 0
+
     total_minutes_expression = Todo.actual_hour * 60 + Todo.actual_min
     
     rows = db.session.query(
@@ -188,22 +191,69 @@ def show_summary(student_name):
     total_month_hours = total_row['month'] / 60
     
     levels = {
-        10: ("勉強見習い", "#888", "images/level_novice.png"), 20: ("勉強修行中", "#3498db", "images/level_novice.png"),
-        30: ("勉強玄人", "#2ecc71", "images/level_novice.png"), 40: ("勉強名人", "#e67e22", "images/level_master.png"),
-        50: ("勉強達人", "#9b59b6", "images/level_master.png"), 60: ("勉強超人", "#1abc9c", "images/level_master.png"),
-        70: ("勉強大達人", "#f39c12", "images/level_god.png"), 80: ("勉強仙人", "#e74c3c", "images/level_god.png")
+        10: ("勉強見習い", "#888", "images/level_novice.png"),
+        20: ("勉強修行中", "#3498db", "images/level_novice.png"),
+        30: ("勉強玄人", "#2ecc71", "images/level_novice.png"),
+        40: ("勉強名人", "#e67e22", "images/level_master.png"),
+        50: ("勉強達人", "#9b59b6", "images/level_master.png"),
+        60: ("勉強超人", "#1abc9c", "images/level_master.png"),
+        70: ("勉強大達人", "#f39c12", "images/level_god.png"),
+        80: ("勉強仙人", "#e74c3c", "images/level_god.png")
     }
     level_text, level_style, level_image = "勉強神", "color: #c0392b; font-weight: bold; font-size: 1.5em; text-shadow: 0 0 10px gold;", "images/level_god.png"
-    for threshold, (text, style_color, image_path) in sorted(levels.items()):
+    
+    for threshold, (text, style, image_path) in sorted(levels.items()):
         if total_month_hours < threshold:
-            level_text, level_style, level_image = text, f"color: {style_color};", image_path
+            level_text, level_style, level_image = text, f"color: {style};", image_path
             break
             
     date_info = {
-        'today': f"{today.month}月{today.day}日", 'week_start': f"{start_of_week.month}月{start_of_week.day}日",
-        'week_end': f"{end_of_week.month}月{end_of_week.day}日", 'month': start_of_month.strftime('%Y年%m月'),
+        'today': f"{today.month}月{today.day}日",
+        'week_start': f"{start_of_week.month}月{start_of_week.day}日",
+        'week_end': f"{end_of_week.month}月{end_of_week.day}日",
+        'month': start_of_month.strftime('%Y年%m月'),
         'total_days': total_days
     }
     return render_template('summary.html', student_name=student_name, summary_data=summary_data, date_info=date_info, 
                            level_text=level_text, level_style=level_style, level_image=level_image,
                            month_str=month_str, total_row=total_row, comparison_minutes=comparison_minutes)
+
+@bp.route('/api/student/<student_name>/chart_data')
+def chart_data(student_name):
+    if ('student' not in session or session['student'] != student_name) and 'admin' not in session:
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    week_offset = int(request.args.get('week_offset', 0))
+    subject_filter = request.args.get('subject', 'all')
+    today = datetime.now() + timedelta(weeks=week_offset)
+    start_of_week = today - timedelta(days=today.weekday())
+    end_of_week = start_of_week + timedelta(days=6)
+    
+    labels = [(start_of_week + timedelta(days=i)).strftime('%m/%d') for i in range(7)]
+    
+    base_query = db.session.query(
+        Todo.date, Todo.subject, func.sum(Todo.actual_hour * 60 + Todo.actual_min).label('total_minutes')
+    ).filter(
+        Todo.student_name == student_name, Todo.completed == True,
+        Todo.date.between(start_of_week.strftime('%Y-%m-%d'), end_of_week.strftime('%Y-%m-%d'))
+    )
+    if subject_filter != 'all':
+        base_query = base_query.filter(Todo.subject == subject_filter)
+    
+    rows = base_query.group_by(Todo.date, Todo.subject).all()
+
+    datasets = {}
+    subjects = ["国語", "数学", "理科", "社会", "英語"] if subject_filter == 'all' else [subject_filter]
+    for sub in subjects:
+        datasets[sub] = {'label': sub, 'data': [0] * 7}
+        
+    for row in rows:
+        day_index = (datetime.strptime(row.date, '%Y-%m-%d').date() - start_of_week.date()).days
+        if 0 <= day_index < 7 and row.subject in datasets:
+            datasets[row.subject]['data'][day_index] = row.total_minutes
+
+    return jsonify({
+        'title': f'{start_of_week.strftime("%Y/%m/%d")} - {end_of_week.strftime("%Y/%m/%d")}の学習記録',
+        'labels': labels,
+        'datasets': list(datasets.values())
+    })

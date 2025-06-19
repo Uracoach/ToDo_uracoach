@@ -1,18 +1,19 @@
 {% extends 'base.html' %}
 {% block title %}管理者ダッシュボード{% endblock %}
 {% block content %}
-<style>
-    .action-links a, .action-links button { margin: 0 5px; }
-</style>
-
 <h2>管理者ダッシュボード</h2>
 
 <div style="display: flex; gap: 2em; flex-wrap: wrap;">
-    <div style="flex: 2; min-width: 300px;">
+    <div style="flex: 2; min-width: 400px;">
         <h3>生徒別 学習状況</h3>
         <table>
             <thead>
-                <tr><th>生徒名</th><th>今週の学習時間</th><th>総合計学習時間</th><th>操作</th></tr>
+                <tr>
+                    <th>生徒名</th>
+                    <th>今週の学習時間</th>
+                    <th>総合計学習時間</th>
+                    <th>操作</th>
+                </tr>
             </thead>
             <tbody>
             {% for stats in student_stats %}
@@ -20,31 +21,37 @@
                     <td><strong>{{ stats.name }}</strong></td>
                     <td>{{ (stats.week_total or 0) // 60 }}時間 {{ (stats.week_total or 0) % 60 }}分</td>
                     <td>{{ (stats.all_time_total or 0) // 60 }}時間 {{ (stats.all_time_total or 0) % 60 }}分</td>
-                    <td class="action-links">
-                        <a href="{{ url_for('admin.admin_view', student_name=stats.name) }}">ToDoリスト</a> |
-                        <a href="{{ url_for('admin.report', student_name=stats.name) }}" target="_blank">レポート</a> |
-                        <a href="{{ url_for('admin.reset_password', student_name=stats.name) }}">PWリセット</a> |
-                        <form action="{{ url_for('admin.delete_student', student_name=stats.name) }}" method="POST" style="display: inline;" onsubmit="return confirm('本当に「{{ stats.name }}」さんを全ての学習記録と共に削除しますか？これは元に戻せません。');">
-                            <button type="submit" style="background:none; border:none; color:#dc3545; padding:0; font-size:1em; cursor:pointer;">削除</button>
-                        </form>
+                    <td>
+                        <div class="action-buttons">
+                            <a href="{{ url_for('admin.admin_view', student_name=stats.name) }}" class="btn-action">ToDo</a>
+                            <a href="{{ url_for('admin.report', student_name=stats.name) }}" class="btn-action" target="_blank">レポート</a>
+                            <a href="{{ url_for('admin.reset_password', student_name=stats.name) }}" class="btn-action btn-secondary">PWリセット</a>
+                            <form action="{{ url_for('admin.delete_student', student_name=stats.name) }}" method="POST" style="display: inline;" onsubmit="return confirm('本当に「{{ stats.name }}」さんを全ての学習記録と共に削除しますか？これは元に戻せません。');">
+                                <button type="submit" class="btn-action btn-danger">削除</button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
-    <div style="flex: 1; min-width: 250px;">
+    <div style="flex: 1; min-width: 280px;">
         <h3>新規生徒登録</h3>
         <form action="{{ url_for('admin.add_student') }}" method="POST">
-            名前：<input type="text" name="new_student" required><br>
-            パスワード：
-            <div class="password-wrapper">
-                <input type="password" name="new_password" required>
+            <div>
+                <label for="new_student">名前：</label>
+                <input type="text" id="new_student" name="new_student" required>
             </div>
-            <br>
+            <div>
+                <label for="new_password">パスワード：</label>
+                <div class="password-wrapper">
+                    <input type="password" id="new_password" name="new_password" required>
+                </div>
+            </div>
             <input type="submit" value="登録">
         </form>
-        <hr>
+        <hr style="margin: 2em 0;">
         <h4>今週活動のない生徒</h4>
         {% if inactive_students %}
         <ul>
