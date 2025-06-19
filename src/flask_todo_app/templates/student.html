@@ -19,7 +19,7 @@
     {% if missions %}
         {% for mission in missions %}
             <div>
-                {% if mission.id in completed_mission_ids %}
+                {% if mission.completed %}
                     <div class="mission-complete-effect">COMPLETE!!</div>
                     <p><s><strong>{{ mission.description }}</strong></s></p>
                 {% else %}
@@ -96,8 +96,7 @@
 {% endblock %}
 
 {% block scripts %}
-    {{ super() }}
-<style>
+{{ super() }} <style>
 @keyframes complete-don {
     0% { transform: scale(0) rotate(720deg); opacity: 0; }
     80% { transform: scale(1.2); }
@@ -114,22 +113,24 @@
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    // ToDo追加の非同期処理
     const addForm = document.getElementById('add-todo-form');
     if (addForm) {
         addForm.addEventListener('submit', function(event) {
             event.preventDefault();
             const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+
             fetch("{{ url_for('main.add_todo_api') }}", {
                 method: 'POST',
-                body: formData
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    const newRow = createTodoRow(data.todo);
-                    document.getElementById('todo-list-body').appendChild(newRow);
-                    document.getElementById('no-todos-row')?.remove();
-                    this.reset();
+                    // ページをリロードしてフラッシュメッセージと新しいToDoを表示
+                    window.location.reload();
                 } else {
                     alert('エラー: ' + data.error);
                 }
@@ -137,6 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ToDo完了の非同期処理
     const todoListBody = document.getElementById('todo-list-body');
     if (todoListBody) {
         todoListBody.addEventListener('submit', function(event) {
@@ -145,15 +147,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 const form = event.target;
                 const todoId = form.dataset.id;
                 const formData = new FormData(form);
+                const data = Object.fromEntries(formData.entries());
                 const statusCell = form.parentElement;
+
                 fetch(`/api/update_todo/${todoId}`, {
                     method: 'POST',
-                    body: formData
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
                         statusCell.innerHTML = `✔ ${data.actual_hour}h ${data.actual_min}m`;
+                        // 完了したらフラッシュメッセージを表示するためにリロード
+                        window.location.reload();
                     } else {
                         alert('エラー: ' + data.error);
                     }
@@ -162,6 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
+    // 削除リンクの非同期処理
     document.addEventListener('click', function(event) {
         if (event.target.classList.contains('delete-link')) {
             event.preventDefault();
@@ -184,27 +192,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
-
-function createTodoRow(todo) {
-    const tr = document.createElement('tr');
-    tr.dataset.todoId = todo.id;
-    tr.innerHTML = `
-        <td>${todo.subject}</td>
-        <td>${todo.material}</td>
-        <td>${todo.start_page} - ${todo.end_page}</td>
-        <td>${todo.target_hour}h ${todo.target_min}m</td>
-        <td class="status-cell">
-            <form class="update-todo-form" data-id="${todo.id}">
-                <input type="number" name="actual_hour" min="0" value="0" style="width: 40px;"> 時間
-                <input type="number" name="actual_min" min="0" max="59" value="0" style="width: 40px;"> 分
-                <input type="submit" value="完了" style="width: auto; padding: 5px 10px; font-size: 0.9em;">
-            </form>
-        </td>
-        <td>
-            <a href="#" class="delete-link" data-id="${todo.id}">削除</a>
-        </td>
-    `;
-    return tr;
-}
 </script>
 {% endblock %}

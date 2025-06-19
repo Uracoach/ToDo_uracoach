@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}テスト開始の確認{% endblock %}
+
+{% block content %}
+<style>
+    .confirm-container {
+        text-align: center;
+        padding: 3em;
+        background: #fff;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .confirm-container h2 {
+        font-size: 2em;
+    }
+    .confirm-container p {
+        font-size: 1.2em;
+        color: #555;
+    }
+    .confirm-actions {
+        margin-top: 2em;
+    }
+    .confirm-actions .btn {
+        display: inline-block;
+        padding: 15px 30px;
+        margin: 10px;
+        font-size: 1.2em;
+        font-weight: bold;
+        text-decoration: none;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    .btn-start {
+        background-color: #27ae60;
+        color: white;
+    }
+    .btn-back {
+        background-color: #7f8c8d;
+        color: white;
+    }
+</style>
+
+<div class="confirm-container">
+    <h2>{{ test.title }}</h2>
+    <p>試験を開始しますか？</p>
+    <p><strong>制限時間は10分です。</strong></p>
+    <p><small>（時間を過ぎると、その時点の解答で自動的に採点されます）</small></p>
+    <div class="confirm-actions">
+        <a href="{{ url_for('ai_test.view_test', test_id=test.id) }}" class="btn btn-start">開始する</a>
+        <a href="{{ url_for('main.student_view', student_name=session.student) }}" class="btn btn-back">戻る</a>
+    </div>
+</div>
+{% endblock %}

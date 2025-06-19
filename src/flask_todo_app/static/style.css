@@ -1,106 +1,123 @@
 /* Google Fontsからフォントをインポート */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Yuji+Syuku&family=Kaisei+Decol:wght@700&display=swap');
 
-/* --- 背景画像の設定 --- */
+/* --- 基本設定 --- */
 body {
-    background-image: url('images/background.png');
+    background-image: url('background.png');
     background-size: cover;
     background-attachment: fixed;
     background-position: center;
     font-family: 'Noto Sans JP', sans-serif;
-    line-height: 1.6;
     color: #333;
     margin: 0;
-    padding: 0;
+    padding-top: 70px; /* 固定ヘッダーのためのスペース */
 }
-
-/* コンテンツが見やすいように、半透明の白い背景を敷く */
 .content-wrapper {
     max-width: 800px;
     margin: 2em auto;
     padding: 2em;
-    background-color: rgba(255, 255, 255, 0.92);
+    background-color: rgba(255, 255, 255, 0.95);
     border-radius: 12px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
-/* --- 基本スタイル --- */
-table {
+/* --- ヘッダーとハンバーガーメニュー --- */
+.site-header {
+    background-color: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid #ddd;
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
-    border-collapse: collapse;
-    margin-top: 1em;
-    background-color: #fff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 1000;
 }
-th, td {
-    border: 1px solid #ddd;
-    padding: 12px;
-    text-align: left;
-    vertical-align: middle;
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1em;
+    height: 70px;
 }
-th { background-color: #e9ecef; }
+.home-logo img { height: 30px; vertical-align: middle; }
+.hamburger-btn {
+    display: none; /* PCでは非表示 */
+    font-size: 1.8em;
+    background: none;
+    border: none;
+    color: #333;
+    cursor: pointer;
+    z-index: 1002;
+}
+.nav-menu { z-index: 1001; }
+.nav-menu ul { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 1.5em; }
+.nav-menu a { text-decoration: none; color: #0056b3; font-weight: bold; }
+.nav-menu a:hover { text-decoration: underline; }
+.nav-menu .user-info { font-weight: bold; color: #555; white-space: nowrap; }
 
+/* --- フォームのデザイン修正 --- */
+form div {
+    margin-bottom: 1rem;
+}
+form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
 input[type=text], input[type=password], input[type=number], select, input[type=date], input[type=month], textarea {
-    padding: 8px;
-    margin-bottom: 10px;
+    padding: 10px;
+    margin-bottom: 0;
     border-radius: 4px;
     border: 1px solid #ccc;
-    width: calc(100% - 18px);
+    width: 100%;
+    box-sizing: border-box; /* paddingを含めて幅100%にする */
 }
 input[type=submit] {
     background-color: #007bff;
     color: white;
-    padding: 10px 15px;
+    padding: 12px 20px;
     border: none;
     cursor: pointer;
     border-radius: 4px;
     transition: background-color 0.3s ease;
+    width: 100%; /* ボタン幅を統一 */
+    margin-top: 10px;
 }
 input[type=submit]:hover { background-color: #0056b3; }
 
-/* --- ナビゲーションバー --- */
-.nav { display: flex; align-items: center; justify-content: space-between; gap: 1em; padding-bottom: 1em; border-bottom: 1px solid #ddd; margin-bottom: 2em; }
-.nav-links { display: flex; align-items: center; gap: 1em; }
-.nav a { text-decoration: none; color: #0056b3; font-weight: bold; }
-.nav a:hover { text-decoration: underline; }
-
-/* --- フラッシュメッセージ --- */
+/* --- その他汎用スタイル --- */
+table { width: 100%; border-collapse: collapse; margin-top: 1em; }
+th, td { border: 1px solid #ddd; padding: 12px; text-align: left; vertical-align: middle; }
+th { background-color: #f2f2f2; }
 .flash { padding: 1em; margin-bottom: 1em; border-radius: 5px; border: 1px solid; }
 .flash.success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
 .flash.error { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+.password-wrapper { position: relative; width: 100%; }
+.password-toggle { position: absolute; top: 50%; right: 10px; transform: translateY(-50%); cursor: pointer; color: #888; background: none; border: none; }
 
-/* --- パスワード表示切替ボタン --- */
-.password-wrapper { position: relative; display: inline-block; width: 100%; }
-.password-toggle { position: absolute; top: 10px; right: 10px; cursor: pointer; color: #888; background: none; border: none; outline: none; }
-
-/* --- 管理者ダッシュボードのスタイル --- */
-.action-links a, .action-links button { margin: 0 5px; }
-
-/* --- 集計表ページのスタイル --- */
-.summary-container { text-align: center; }
-.main-title { font-family: 'Yuji Syuku', serif; font-size: 3.5em; color: #2c3e50; margin-bottom: 0.5em; }
-.summary-table { font-family: 'Noto Sans JP', sans-serif; width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 2em; margin-bottom: 3em; border: 1px solid #ddd; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
-.summary-table td { padding: 15px; text-align: center; vertical-align: middle; }
-.summary-table thead th { background-color: #34495e; color: #ffffff; font-weight: 700; }
-.summary-table tbody tr:nth-child(even) { background-color: #f8f9fa; }
-.summary-table .subject-col { text-align: left; font-weight: 700; width: 15%; }
-.summary-table tfoot td { font-weight: 700; background-color: #ecf0f1; border-top: 2px solid #bdc3c7; }
-.monthly-total-container { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2em; border-radius: 12px; box-shadow: 0 10px 20px rgba(0,0,0,0.15); margin: 2em 0; }
-.monthly-total-container h3 { margin-top: 0; font-weight: 400; opacity: 0.8; }
-.counter-value { font-size: 4em; font-weight: 700; letter-spacing: 2px; }
-.level-container { margin-top: 2em; font-family: 'Noto Sans JP', sans-serif; font-size: 1.8em; }
-.level-text { display: inline-block; padding: 0.5em 1em; border-radius: 8px; }
-.comparison-text { font-family: 'Kaisei Decol', serif; font-size: 1.2em; margin-top: 1.5em; padding: 1em; border-radius: 8px; display: inline-block; }
-.comparison-text.plus { background-color: #e8f5e9; color: #2e7d32; }
-.comparison-text.minus { background-color: #ffebee; color: #c62828; }
-@keyframes don-effect { 0% { transform: scale(0.3) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.1) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); } }
-.level-text-effect { animation: don-effect 0.6s cubic-bezier(0.250, 0.460, 0.450, 0.940) both; }
-
-/* --- レスポンシブ対応 --- */
+/* --- レスポンシブ対応（スマホ用） --- */
 @media (max-width: 768px) {
     .content-wrapper { padding: 1em; margin: 1em; }
-    .nav { flex-direction: column; align-items: flex-start; }
-    .nav-links { margin-top: 1em; }
-    table, th, td { font-size: 0.9em; padding: 8px; }
-    input[type=submit] { width: 100%; }
+    .hamburger-btn { display: block; }
+    .nav-menu {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: -300px;
+        width: 300px;
+        height: 100vh;
+        background-color: #34495e;
+        box-shadow: 3px 0 15px rgba(0,0,0,0.2);
+        transition: left 0.3s ease-in-out;
+        padding-top: 80px;
+    }
+    .nav-menu.active { display: block; left: 0; }
+    .nav-menu ul { flex-direction: column; width: 100%; padding: 1em 0; align-items: flex-start; }
+    .nav-menu ul li { width: 100%; text-align: left; padding: 1em 25px; border-top: 1px solid #46627f; box-sizing: border-box; }
+    .nav-menu ul li:first-child { border-top: none; }
+    .nav-menu ul li a { color: white; }
+    .nav-menu .user-info { color: #ecf0f1; }
 }

@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}{{ test.title }}{% endblock %}
+{% block content %}
+<style>
+    .quiz-container { max-width: 700px; margin: auto; background: white; padding: 2em; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    .quiz-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; margin-bottom: 1em; padding-bottom: 1em; }
+    .countdown-timer { font-size: 1.5em; font-weight: bold; color: #e74c3c; font-family: 'Roboto Mono', monospace; }
+    .question-box { padding-bottom: 1em; }
+    .question-text { font-size: 1.5em; margin-bottom: 1em; }
+    .options-list { list-style-type: none; padding: 0; }
+    .options-list li { margin-bottom: 1em; }
+    .options-list label { display: block; padding: 1em; border: 1px solid #ccc; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; }
+    .options-list label:hover { background-color: #f0f8ff; }
+    .options-list input[type="radio"]:checked + span { font-weight: bold; color: #0056b3; }
+</style>
+
+<div class="quiz-container">
+    <div class="quiz-header">
+        <h3>{{ test.title }}</h3>
+        <div id="countdown-timer" class="countdown-timer">10:00</div>
+    </div>
+    <form id="quiz-form" method="POST" action="{{ url_for('ai_test.submit_test', test_id=test.id) }}">
+        {% for q in test.questions %}
+        <div class="question-box">
+            <p><strong>問{{ loop.index }}: {{ q.question_text }}</strong></p>
+            <ul style="list-style: none; padding-left: 0;">
+                {% set options = q.options | fromjson %}
+                {% for key, value in options.items() %}
+                <li>
+                    <label>
+                        <input type="radio" name="q-{{ q.id }}" value="{{ key }}" required> 
+                        <span>{{ key }}: {{ value }}</span>
+                    </label>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <hr>
+        {% endfor %}
+        <input type="submit" value="答え合わせをする">
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const timerDisplay = document.getElementById('countdown-timer');
+    const quizForm = document.getElementById('quiz-form');
+    let timeLeft = 600; // 10分 = 600秒
+
+    const timer = setInterval(() => {
+        timeLeft--;
+        const minutes = String(Math.floor(timeLeft / 60)).padStart(2, '0');
+        const seconds = String(timeLeft % 60).padStart(2, '0');
+        timerDisplay.textContent = `${minutes}:${seconds}`;
+
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            alert('時間切れです！自動的に採点します。');
+            quizForm.submit();
+        }
+    }, 1000);
+
+    // フォームが送信されたらタイマーを止める
+    quizForm.addEventListener('submit', () => {
+        clearInterval(timer);
+    });
+});
+</script>
+{% endblock %}

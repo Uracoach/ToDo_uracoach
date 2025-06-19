@@ -1,6 +1,37 @@
 {% extends 'base.html' %}
 {% block title %}{{ student_name }}の学習集計表{% endblock %}
 {% block content %}
+<style>
+    /* Google Fontsからフォントをインポート */
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Yuji+Syuku&family=Kaisei+Decol:wght@700&display=swap');
+
+    .summary-container { text-align: center; padding: 2em; }
+    .main-title { font-family: 'Yuji Syuku', serif; font-size: 3.5em; color: #2c3e50; margin-bottom: 0.5em; }
+    .summary-table { font-family: 'Noto Sans JP', sans-serif; width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 2em; margin-bottom: 3em; border: 1px solid #ddd; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+    .summary-table th, .summary-table td { padding: 15px; text-align: center; vertical-align: middle; }
+    .summary-table thead th { background-color: #34495e; color: #ffffff; font-weight: 700; }
+    .summary-table tbody tr:nth-child(even) { background-color: #f8f9fa; }
+    .summary-table .subject-col { text-align: left; font-weight: 700; width: 15%; }
+    .summary-table tfoot td { font-weight: 700; background-color: #ecf0f1; border-top: 2px solid #bdc3c7; }
+    .monthly-total-container { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2em; border-radius: 12px; box-shadow: 0 10px 20px rgba(0,0,0,0.15); margin: 2em 0; }
+    .monthly-total-container h3 { margin-top: 0; font-weight: 400; opacity: 0.8; }
+    .counter-value { font-size: 4em; font-weight: 700; letter-spacing: 2px; }
+    .level-container { margin-top: 2em; font-family: 'Noto Sans JP', sans-serif; font-size: 1.8em; }
+    .level-text { display: inline-block; padding: 0.5em 1em; border-radius: 8px; }
+    .comparison-text { font-family: 'Kaisei Decol', serif; font-size: 1.2em; margin-top: 1.5em; padding: 1em; border-radius: 8px; display: inline-block; }
+    .comparison-text.plus { background-color: #e8f5e9; color: #2e7d32; }
+    .comparison-text.minus { background-color: #ffebee; color: #c62828; }
+
+    @keyframes don-effect {
+        0% { transform: scale(0.3) rotate(-15deg); opacity: 0; }
+        60% { transform: scale(1.1) rotate(5deg); opacity: 1; }
+        100% { transform: scale(1) rotate(0deg); }
+    }
+    .level-text-effect {
+        animation: don-effect 0.6s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+    }
+</style>
+
 <div class="summary-container">
     <h1 class="main-title">努力は裏切らない</h1>
     <form method="GET">

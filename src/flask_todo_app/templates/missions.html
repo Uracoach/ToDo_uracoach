@@ -2,47 +2,40 @@
 {% block title %}ウィークリーミッション管理{% endblock %}
 {% block content %}
     <h2>ウィークリーミッション管理</h2>
-    <p>ここで設定したミッションは、今週、全生徒のToDoページに表示されます。</p>
+    <p>ここで設定したミッションは、選択した生徒のページに今週のミッションとして表示されます。</p>
 
     <h3>新しいミッションを追加</h3>
-    <form method="POST">
-        <label for="description">ミッション内容:</label><br>
-        <textarea name="description" id="description" rows="2" style="width: 98%;" required></textarea><br>
-        <small>例：「今週は毎日30分以上勉強しよう！」</small>
-        
-        {# ミッションの目標設定部分は一旦シンプル化のためコメントアウト #}
-        {#
-        <hr>
-        <p><strong>任意：特定の教科の学習時間をミッションにする場合</strong></p>
-        <label for="subject_target">教科:</label>
-        <select name="subject_target" id="subject_target">
-            <option value="none">指定しない</option>
-            <option value="国語">国語</option>
-            <option value="数学">数学</option>
-            <option value="理科">理科</option>
-            <option value="社会">社会</option>
-            <option value="英語">英語</option>
-        </select>
-        <label for="minutes_target">目標時間（分）:</label>
-        <input type="number" name="minutes_target" id="minutes_target" min="1"><br>
-        <small>例：「数学」を「60」分</small>
-        #}
-        <br><br>
-        <input type="submit" value="ミッションを追加">
+    <form method="POST" action="{{ url_for('admin.missions') }}">
+        <div>
+            <label for="description">ミッション内容:</label><br>
+            <textarea name="description" id="description" rows="3" style="width: 98%;" required placeholder="例：今週は数学の課題P.50～P.55を終わらせる！"></textarea>
+        </div>
+        <div>
+            <label>対象生徒 (複数選択可):</label><br>
+            <div style="height: 150px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; background: #fff;">
+                {% for student in students %}
+                <label style="display: block;"><input type="checkbox" name="target_students" value="{{ student.name }}"> {{ student.name }}</label>
+                {% endfor %}
+            </div>
+        </div>
+        <br>
+        <input type="submit" value="選択した生徒にミッションを追加">
     </form>
 
     <hr style="margin: 2em 0;">
 
-    <h3>今週のミッション一覧</h3>
+    <h3>今週設定済みのミッション一覧</h3>
     {% if missions %}
     <table>
         <thead>
-            <tr><th>内容</th><th>操作</th></tr>
+            <tr><th>生徒名</th><th>内容</th><th>状態</th><th>操作</th></tr>
         </thead>
         <tbody>
             {% for mission in missions %}
             <tr>
+                <td>{{ mission.student_name }}</td>
                 <td>{{ mission.description }}</td>
+                <td>{{ "達成済み" if mission.completed else "未達成" }}</td>
                 <td>
                     <form action="{{ url_for('admin.delete_mission', mission_id=mission.id) }}" method="POST" onsubmit="return confirm('このミッションを削除しますか？');">
                         <button type="submit" style="background:none; border:none; color:#dc3545; padding:0; font-size:1em; cursor:pointer;">削除</button>

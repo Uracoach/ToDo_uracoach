@@ -8,32 +8,38 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 <body>
-    <div class="content-wrapper">
-        <header>
-            <nav class="nav">
-                <a href="{{ url_for('main.home') }}">
-                    <img src="{{ url_for('static', filename='images/uracoach_logo.png') }}" alt="ホーム" style="height: 30px; vertical-align: middle;">
-                </a>
-                <div class="nav-links">
+    <header class="site-header">
+        <div class="header-content">
+            <a href="{{ url_for('main.home') }}" class="home-logo">
+                <img src="{{ url_for('static', filename='uracoach_logo.png') }}" alt="ホーム">
+            </a>
+            <button id="hamburger-btn" class="hamburger-btn">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <nav class="nav-menu" id="nav-menu">
+                <ul>
                     {% if session['student'] %}
-                        <span>ようこそ, {{ session['student'] }} さん</span>
-                        <a href="{{ url_for('main.student_view', student_name=session['student']) }}">ToDoリスト</a>
-                        <a href="{{ url_for('timer.timer_page') }}">タイマー</a>
-                        <a href="{{ url_for('main.logout') }}">ログアウト</a>
+                        <li class="user-info">ようこそ, {{ session['student'] }} さん</li>
+                        <li><a href="{{ url_for('main.student_view', student_name=session['student']) }}"><i class="fa-solid fa-list-check fa-fw"></i> ToDoリスト</a></li>
+                        <li><a href="{{ url_for('timer.timer_page') }}"><i class="fa-solid fa-stopwatch fa-fw"></i> タイマー</a></li>
+                        <li><a href="{{ url_for('ai_test.daily_test') }}"><i class="fa-solid fa-file-alt fa-fw"></i> 今日のテスト</a></li>
+                        <li><a href="{{ url_for('ai_test.test_history') }}"><i class="fa-solid fa-history fa-fw"></i> テスト履歴</a></li>
+                        <li><a href="{{ url_for('main.logout') }}"><i class="fa-solid fa-right-from-bracket fa-fw"></i> ログアウト</a></li>
                     {% elif 'admin' in session %}
-                        <a href="{{ url_for('admin.dashboard') }}">ダッシュボード</a>
-                        <a href="{{ url_for('main.logout') }}">ログアウト</a>
+                        <li class="user-info">管理者としてログイン中</li>
+                        <li><a href="{{ url_for('admin.dashboard') }}"><i class="fa-solid fa-tachometer-alt fa-fw"></i> ダッシュボード</a></li>
+                        <li><a href="{{ url_for('ai_test.create_weekly_test') }}"><i class="fa-solid fa-pencil-alt fa-fw"></i> 週テスト作成</a></li>
+                        <li><a href="{{ url_for('main.logout') }}"><i class="fa-solid fa-right-from-bracket fa-fw"></i> ログアウト</a></li>
                     {% else %}
-                        <a href="{{ url_for('main.login') }}">生徒ログイン</a>
+                        <li><a href="{{ url_for('main.login') }}">生徒ログイン</a></li>
+                        <li><a href="{{ url_for('admin.admin_login') }}">管理者ページ</a></li>
                     {% endif %}
-                    
-                    {% if 'admin' not in session and 'student' not in session %}
-                    <a href="{{ url_for('admin.admin_login') }}">管理者ページ</a>
-                    {% endif %}
-                </div>
+                </ul>
             </nav>
-        </header>
+        </div>
+    </header>
 
+    <div class="content-wrapper">
         <div class="flash-messages">
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
@@ -43,39 +49,23 @@
                 {% endif %}
             {% endwith %}
         </div>
-
         <main>
             {% block content %}{% endblock %}
         </main>
     </div>
 
-    {% block scripts %}
     <script>
-    // パスワード表示切替機能
-    function setupPasswordToggle() {
-        document.querySelectorAll('.password-wrapper').forEach(wrapper => {
-            if (wrapper.querySelector('.password-toggle')) { return; }
-            const input = wrapper.querySelector('input[type="password"], input[type="text"]');
-            if (input) {
-                const toggle = document.createElement('button');
-                toggle.type = 'button';
-                toggle.className = 'password-toggle';
-                toggle.innerHTML = '<i class="fa-solid fa-eye"></i>';
-                toggle.addEventListener('click', () => {
-                    if (input.type === 'password') {
-                        input.type = 'text';
-                        toggle.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
-                    } else {
-                        input.type = 'password';
-                        toggle.innerHTML = '<i class="fa-solid fa-eye"></i>';
-                    }
-                });
-                wrapper.appendChild(toggle);
-            }
-        });
-    }
-    document.addEventListener('DOMContentLoaded', setupPasswordToggle);
+    // ハンバーガーメニューの動作
+    document.addEventListener('DOMContentLoaded', () => {
+        const hamburgerBtn = document.getElementById('hamburger-btn');
+        const navMenu = document.getElementById('nav-menu');
+        if (hamburgerBtn && navMenu) {
+            hamburgerBtn.addEventListener('click', () => {
+                navMenu.classList.toggle('active');
+            });
+        }
+    });
     </script>
-    {% endblock %}
+    {% block scripts %}{% endblock %}
 </body>
 </html>

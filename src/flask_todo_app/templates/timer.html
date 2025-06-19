@@ -47,7 +47,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+{{ super() }} <script>
 document.addEventListener('DOMContentLoaded', () => {
     const studentName = '{{ student_name }}';
     const todoSelect = document.getElementById('todo-select');

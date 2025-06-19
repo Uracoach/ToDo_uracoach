@@ -7,6 +7,7 @@
         <thead>
             <tr>
                 <th>受験日</th>
+                <th>テスト名</th>
                 <th>スコア</th>
                 <th></th>
             </tr>
@@ -14,19 +15,20 @@
         <tbody>
             {% for test in tests %}
             <tr>
-                <td>{{ test.test_date }}</td>
+                <td>{{ test.created_at.strftime('%Y年%m月%d日') }}</td>
+                <td>{{ test.title }}</td>
                 <td>
-                    {% if test.score is not none %}
+                    {% if test.is_completed %}
                         {{ test.score }} / {{ test.questions|length }} 点
                     {% else %}
                         未受験
                     {% endif %}
                 </td>
                 <td>
-                    {% if test.score is not none %}
+                    {% if test.is_completed %}
                         <a href="{{ url_for('ai_test.view_result', test_id=test.id) }}">結果を見る</a>
                     {% else %}
-                        <span style="color: #888;">(まだ受験できません)</span>
+                        <a href="{{ url_for('ai_test.view_test', test_id=test.id) }}">受験する</a>
                     {% endif %}
                 </td>
             </tr>

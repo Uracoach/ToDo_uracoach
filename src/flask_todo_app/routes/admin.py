@@ -14,9 +14,9 @@ def admin_login():
         return redirect(url_for('admin.dashboard'))
         
     if request.method == 'POST':
-        # --- ★★★ ここが今回の修正箇所です ★★★ ---
-        # 'your_strong_password_here'の部分を、あなたが使いたい実際の管理者パスワードに書き換えてください
-        if request.form['password'] == 'UraWa20230316':
+        # .flaskenvまたはWSGIファイルからパスワードを読み込む
+        admin_password_from_config = current_app.config.get('ADMIN_PASSWORD', 'adminpass')
+        if request.form['password'] == admin_password_from_config:
             session['admin'] = True
             session.permanent = False
             return redirect(url_for('admin.dashboard'))
@@ -58,6 +58,10 @@ def add_student():
     new_student_name = request.form['new_student']
     new_password = request.form['new_password']
     
+    if not new_student_name or not new_password:
+        flash("名前とパスワードの両方を入力してください。", "error")
+        return redirect(url_for('admin.dashboard'))
+        
     existing_user = Student.query.get(new_student_name)
     if existing_user:
         flash(f"生徒「{new_student_name}」はすでに存在します。", "error")
@@ -95,6 +99,8 @@ def delete_student(student_name):
         db.session.delete(student)
         db.session.commit()
         flash(f"生徒「{student_name}」を全ての記録と共に削除しました。", "success")
+    else:
+        flash(f"生徒「{student_name}」が見つかりません。", "error")
     
     return redirect(url_for('admin.dashboard'))
 
@@ -148,48 +154,32 @@ def report(student_name):
                            subject_totals=subject_totals, total_minutes=total_minutes,
                            report_date=today, month_str=start_of_month.strftime('%Y年%m月'))
 
-@bp.route('/missions', methods=['GET', 'POST'])
-def missions():
-    if 'admin' not in session:
-        return redirect(url_for('admin.admin_login'))
-    if request.method == 'POST':
-        description = request.form.get('description')
-        today = date.today()
-        start_of_week = today - timedelta(days=today.weekday())
-        week_str = start_of_week.strftime('%Y-%m-%d')
-        if description:
-            new_mission = Mission(
-                week_start_date=week_str,
-                description=description
-            )
-            db.session.add(new_mission)
-            db.session.commit()
-            flash("新しいウィークリーミッションを追加しました。")
-        return redirect(url_for('admin.missions'))
-
-    today = date.today()
-    start_of_week = today - timedelta(days=today.weekday())
-    week_str = start_of_week.strftime('%Y-%m-%d')
-    current_missions = Mission.query.filter_by(week_start_date=week_str).all()
-    return render_template('missions.html', missions=current_missions)
-
-@bp.route('/missions/delete/<int:mission_id>', methods=['POST'])
-def delete_mission(mission_id):
-    if 'admin' not in session:
-        return redirect(url_for('admin.admin_login'))
-    mission = Mission.query.get_or_404(mission_id)
-    db.session.delete(mission)
-    db.session.commit()
-    flash("ミッションを削除しました。")
-    return redirect(url_for('admin.missions'))
-
-@bp.route('/mark_mission_complete/<student_name>/<int:mission_id>', methods=['POST'])
-def mark_mission_complete(student_name, mission_id):
+@bp.route('/add_mission/<student_name>', methods=['POST'])
+def add_mission(student_name):
     if 'admin' not in session:
         return redirect(url_for('admin.admin_login'))
     student = Student.query.get_or_404(student_name)
-    mission = Mission.query.get_or_404(mission_id)
-    student.completed_missions.append(mission)
-    db.session.commit()
-    flash(f"「{student.name}」さんのミッションを完了にしました。", "success")
+    description = request.form.get('description')
+    if description:
+        today = date.today()
+        start_of_week = today - timedelta(days=today.weekday())
+        week_str = start_of_week.strftime('%Y-%m-%d')
+        new_mission = Mission(
+            student_name=student_name,
+            week_start_date=week_str,
+            description=description
+        )
+        db.session.add(new_mission)
+        db.session.commit()
+        flash(f"「{student.name}」さんに新しいミッションを追加しました。")
     return redirect(url_for('admin.admin_view', student_name=student_name))
+
+@bp.route('/mark_mission_complete/<int:mission_id>', methods=['POST'])
+def mark_mission_complete(mission_id):
+    if 'admin' not in session:
+        return redirect(url_for('admin.admin_login'))
+    mission = Mission.query.get_or_404(mission_id)
+    mission.completed = not mission.completed
+    db.session.commit()
+    flash("ミッションの状態を更新しました。", "success")
+    return redirect(url_for('admin.admin_view', student_name=mission.student_name))
