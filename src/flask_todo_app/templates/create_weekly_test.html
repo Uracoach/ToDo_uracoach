@@ -6,23 +6,23 @@
 <form method="POST" action="{{ url_for('ai_test.create_weekly_test') }}">
     <div>
         <label>対象生徒 (複数選択可):</label><br>
-        <div style="height: 100px; overflow-y: auto; border: 1px solid #ccc; padding: 10px;">
+        <div style="height: 100px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; background: #fff;">
             {% for student in students %}
-            <label><input type="checkbox" name="student_names" value="{{ student.name }}"> {{ student.name }}</label><br>
+            <label style="display: block;"><input type="checkbox" name="student_names" value="{{ student.name }}"> {{ student.name }}</label>
             {% endfor %}
         </div>
     </div>
     <div>
-        <label for="title">テストのタイトル:</label><br>
+        <label for="title">テストのタイトル:</label>
         <input type="text" name="title" id="title" required placeholder="例：6月第3週 数学確認テスト">
     </div>
     <div>
-        <label for="content">単元・内容:</label><br>
-        <textarea name="content" id="content" rows="3" style="width: 98%;" placeholder="例：連立方程式の文章問題、速さ・道のり・時間の応用" required></textarea>
+        <label for="content">単元・内容:</label>
+        <textarea name="content" id="content" rows="3" style="width: 100%; box-sizing: border-box;" placeholder="例：連立方程式の文章問題、速さ・道のり・時間の応用" required></textarea>
     </div>
     <div>
-        <label for="weak_points">特に強化したい苦手内容（任意）:</label><br>
-        <textarea id="weak_points" name="weak_points" rows="2" style="width: 98%;" placeholder="例：鶴亀算、動詞の活用"></textarea>
+        <label for="weak_points">特に強化したい苦手内容（任意）:</label>
+        <textarea id="weak_points" name="weak_points" rows="2" style="width: 100%; box-sizing: border-box;" placeholder="例：鶴亀算、動詞の活用"></textarea>
     </div>
     <div>
         <label for="num_questions">問題数:</label>
@@ -42,7 +42,20 @@
             <option value="とても難しい">とても難しい</option>
         </select>
     </div>
-    <br>
+    <div>
+        <label for="q_type">問題形式:</label>
+        <select name="q_type" id="q_type">
+            <option value="一問一答形式">一問一答</option>
+            <option value="記述問題">記述</option>
+        </select>
+    </div>
+    <div>
+        <label for="ans_type">解答形式:</label>
+        <select name="ans_type" id="ans_type">
+            <option value="4択問題（A,B,C,D）">4択</option>
+            <option value="解答欄のみ">解答欄のみ</option>
+        </select>
+    </div>
     <input type="submit" value="AIでテストを作成する">
 </form>
 {% endblock %}

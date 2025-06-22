@@ -24,15 +24,19 @@
                         <li><a href="{{ url_for('timer.timer_page') }}"><i class="fa-solid fa-stopwatch fa-fw"></i> タイマー</a></li>
                         <li><a href="{{ url_for('ai_test.daily_test') }}"><i class="fa-solid fa-file-alt fa-fw"></i> 今日のテスト</a></li>
                         <li><a href="{{ url_for('ai_test.test_history') }}"><i class="fa-solid fa-history fa-fw"></i> テスト履歴</a></li>
-                        <li><a href="{{ url_for('main.logout') }}"><i class="fa-solid fa-right-from-bracket fa-fw"></i> ログアウト</a></li>
+                        <li><a href="{{ url_for('ai_test.weekly_tests') }}"><i class="fa-solid fa-star fa-fw"></i> 週テスト</a></li>
                     {% elif 'admin' in session %}
                         <li class="user-info">管理者としてログイン中</li>
                         <li><a href="{{ url_for('admin.dashboard') }}"><i class="fa-solid fa-tachometer-alt fa-fw"></i> ダッシュボード</a></li>
                         <li><a href="{{ url_for('ai_test.create_weekly_test') }}"><i class="fa-solid fa-pencil-alt fa-fw"></i> 週テスト作成</a></li>
-                        <li><a href="{{ url_for('main.logout') }}"><i class="fa-solid fa-right-from-bracket fa-fw"></i> ログアウト</a></li>
                     {% else %}
                         <li><a href="{{ url_for('main.login') }}">生徒ログイン</a></li>
                         <li><a href="{{ url_for('admin.admin_login') }}">管理者ページ</a></li>
+                    {% endif %}
+                    <hr class="nav-divider">
+                    <li><a href="{{ url_for('main.contact') }}"><i class="fa-solid fa-envelope fa-fw"></i> お問い合わせ</a></li>
+                    {% if session['student'] or session['admin'] %}
+                    <li><a href="{{ url_for('main.logout') }}"><i class="fa-solid fa-right-from-bracket fa-fw"></i> ログアウト</a></li>
                     {% endif %}
                 </ul>
             </nav>
@@ -55,7 +59,6 @@
     </div>
 
     <script>
-    // ハンバーガーメニューの動作
     document.addEventListener('DOMContentLoaded', () => {
         const hamburgerBtn = document.getElementById('hamburger-btn');
         const navMenu = document.getElementById('nav-menu');

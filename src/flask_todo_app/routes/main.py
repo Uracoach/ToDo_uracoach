@@ -257,3 +257,8 @@ def chart_data(student_name):
         'labels': labels,
         'datasets': list(datasets.values())
     })
+
+@bp.route('/contact')
+def contact():
+    """お問い合わせページを表示する"""
+    return render_template('contact.html')    

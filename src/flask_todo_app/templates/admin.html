@@ -2,33 +2,34 @@
 {% block title %}管理者ダッシュボード{% endblock %}
 {% block content %}
 <h2>管理者ダッシュボード</h2>
-
-<div style="display: flex; gap: 2em; flex-wrap: wrap;">
-    <div style="flex: 2; min-width: 400px;">
-        <h3>生徒別 学習状況</h3>
+<div class="dashboard-grid">
+    <div class="dashboard-main">
+        <h3>生徒一覧</h3>
         <table>
             <thead>
                 <tr>
                     <th>生徒名</th>
-                    <th>今週の学習時間</th>
-                    <th>総合計学習時間</th>
                     <th>操作</th>
                 </tr>
             </thead>
             <tbody>
-            {% for stats in student_stats %}
+            {% for student in students %}
                 <tr>
-                    <td><strong>{{ stats.name }}</strong></td>
-                    <td>{{ (stats.week_total or 0) // 60 }}時間 {{ (stats.week_total or 0) % 60 }}分</td>
-                    <td>{{ (stats.all_time_total or 0) // 60 }}時間 {{ (stats.all_time_total or 0) % 60 }}分</td>
+                    <td><strong>{{ student.name }}</strong></td>
                     <td>
                         <div class="action-buttons">
-                            <a href="{{ url_for('admin.admin_view', student_name=stats.name) }}" class="btn-action">ToDo</a>
-                            <a href="{{ url_for('admin.report', student_name=stats.name) }}" class="btn-action" target="_blank">レポート</a>
-                            <a href="{{ url_for('admin.reset_password', student_name=stats.name) }}" class="btn-action btn-secondary">PWリセット</a>
-                            <form action="{{ url_for('admin.delete_student', student_name=stats.name) }}" method="POST" style="display: inline;" onsubmit="return confirm('本当に「{{ stats.name }}」さんを全ての学習記録と共に削除しますか？これは元に戻せません。');">
-                                <button type="submit" class="btn-action btn-danger">削除</button>
-                            </form>
+                            <a href="{{ url_for('main.student_view', student_name=student.name) }}" class="btn-action">ToDo表示</a>
+                            <a href="{{ url_for('admin.weekly_test_history', student_name=student.name) }}" class="btn-action">週テスト履歴</a>
+                            <a href="{{ url_for('admin.daily_test_history', student_name=student.name) }}" class="btn-action btn-secondary">毎日テスト履歴</a>
+                            <div class="dropdown">
+                                <button class="btn-action btn-tertiary">その他 <i class="fa-solid fa-caret-down"></i></button>
+                                <div class="dropdown-content">
+                                    <a href="{{ url_for('admin.reset_password', student_name=student.name) }}">PWリセット</a>
+                                    <form action="{{ url_for('admin.delete_student', student_name=student.name) }}" method="POST" onsubmit="return confirm('本当に「{{ student.name }}」さんを全ての学習記録と共に削除しますか？これは元に戻せません。');">
+                                        <button type="submit" class="btn-danger-text">生徒を削除</button>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
                     </td>
                 </tr>
@@ -36,7 +37,7 @@
             </tbody>
         </table>
     </div>
-    <div style="flex: 1; min-width: 280px;">
+    <div class="dashboard-side">
         <h3>新規生徒登録</h3>
         <form action="{{ url_for('admin.add_student') }}" method="POST">
             <div>
@@ -51,17 +52,6 @@
             </div>
             <input type="submit" value="登録">
         </form>
-        <hr style="margin: 2em 0;">
-        <h4>今週活動のない生徒</h4>
-        {% if inactive_students %}
-        <ul>
-            {% for name in inactive_students %}
-                <li>{{ name }}</li>
-            {% endfor %}
-        </ul>
-        {% else %}
-        <p>全員が活動中です！</p>
-        {% endif %}
     </div>
 </div>
 {% endblock %}

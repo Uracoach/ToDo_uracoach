@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}{{ student.name }}さんのデイリーテスト履歴{% endblock %}
+{% block content %}
+    <h2>{{ student.name }}さんのデイリーテスト履歴</h2>
+    <a href="{{ url_for('admin.dashboard') }}">ダッシュボードに戻る</a>
+    
+    {% if tests %}
+    <table>
+        <thead>
+            <tr>
+                <th>受験日</th>
+                <th>テスト名</th>
+                <th>スコア</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for test in tests %}
+            <tr>
+                <td>{{ test.created_at.strftime('%Y-%m-%d') }}</td>
+                <td>{{ test.title }}</td>
+                <td>
+                    {% if test.is_completed %}
+                        {{ test.score }} / {{ test.questions|length }} 点
+                    {% else %}
+                        <span style="color: #888;">未受験</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if test.is_completed %}
+                        <a href="{{ url_for('ai_test.view_result', test_id=test.id) }}">結果を見る</a>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>この生徒が受験したデイリーテストはまだありません。</p>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}週テスト一覧{% endblock %}
+{% block content %}
+    <h2>先生から届いた週テスト</h2>
+    {% if tests %}
+    <table>
+        <thead>
+            <tr>
+                <th>送信日</th>
+                <th>テスト名</th>
+                <th>状態</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for test in tests %}
+            <tr>
+                <td>{{ test.created_at.strftime('%Y-%m-%d') }}</td>
+                <td>{{ test.title }}</td>
+                <td>
+                    {% if test.is_viewed_by_student %}
+                        <span style="color: green;">確認済み</span>
+                    {% else %}
+                        未確認
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('ai_test.view_graded_pdf', test_id=test.id) }}" target="_blank">採点済みテストを見る</a>
+                    {% if not test.is_viewed_by_student %}
+                    <form action="{{ url_for('ai_test.acknowledge_test', test_id=test.id) }}" method="POST" style="display:inline;">
+                        <input type="submit" value="確認しました" style="width: auto; padding: 5px; font-size: 0.8em;">
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>まだ先生から届いた週テストはありません。</p>
+    {% endif %}
+{% endblock %}

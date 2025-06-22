@@ -1,8 +1,6 @@
-from flask import Blueprint, render_template, redirect, url_for, session, current_app, flash, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, session, request, flash, jsonify, current_app, send_from_directory
 import json
-import os
 from datetime import date, timedelta, datetime
-# import google.generativeai as genai
 from .. import db
 from ..models import Student, Todo, AiTest, AiQuestion, AiAnswer
 
@@ -22,8 +20,7 @@ def generate_test_from_ai_dummy(prompt, num_questions=10):
 
 @bp.route('/daily')
 def daily_test():
-    if 'student' not in session:
-        return redirect(url_for('main.login'))
+    if 'student' not in session: return redirect(url_for('main.login'))
     
     student_name = session['student']
     today = date.today()
@@ -44,7 +41,7 @@ def daily_test():
     ).all()
     topics = "、".join(list(set(t.subject for t in recent_todos))) or "総合復習"
     
-    prompt = f"生徒「{student_name}」の昨日の学習内容「{topics}」に基づいた中学レベルの確認テストを10問作成してください。"
+    prompt = f"生徒「{student_name}」の昨日の学習内容「{topics}」に基づき、中学レベルの確認テストを10問作成してください。"
     test_data_json = generate_test_from_ai_dummy(prompt, 10)
     questions_data = json.loads(test_data_json)
     
@@ -63,7 +60,24 @@ def daily_test():
     
     db.session.commit()
     flash("今日のテストが作成されました！", "success")
-    return redirect(url_for('ai_test.view_test', test_id=new_test.id))
+    return redirect(url_for('ai_test.test_confirm', test_id=new_test.id))
+
+# --- ▼▼▼ この新しい関数を、daily_test関数の下に追加してください ▼▼▼ ---
+@bp.route('/confirm/<int:test_id>')
+def test_confirm(test_id):
+    if 'student' not in session: return redirect(url_for('main.login'))
+    test = AiTest.query.get_or_404(test_id)
+    # 権限チェック
+    if test.author.name != session['student']:
+        flash("アクセス権がありません", "error")
+        return redirect(url_for('main.home'))
+    
+    # 受験済みなら結果ページへ
+    if test.is_completed:
+        return redirect(url_for('ai_test.view_result', test_id=test.id))
+
+    return render_template('test_confirm.html', test=test)
+
 
 @bp.route('/view/<int:test_id>')
 def view_test(test_id):
@@ -77,6 +91,25 @@ def view_test(test_id):
         return redirect(url_for('ai_test.view_result', test_id=test.id))
 
     return render_template('test_view.html', test=test)
+
+@bp.route('/view_graded_pdf/<int:test_id>')
+def view_graded_pdf(test_id):
+    if 'student' not in session: return redirect(url_for('main.login'))
+    
+    test = AiTest.query.get_or_404(test_id)
+    if test.author.name != session.get('student'):
+        return "アクセス権がありません", 403
+
+    if not test.graded_pdf_path:
+        return "ファイルが見つかりません", 404
+        
+    # 生徒が確認したことを記録
+    test.is_viewed_by_student = True
+    db.session.commit()
+    
+    # UPLOAD_FOLDERからファイルを安全に送信
+    return send_from_directory(current_app.config['UPLOAD_FOLDER'], test.graded_pdf_path)
+
 
 @bp.route('/submit_test/<int:test_id>', methods=['POST'])
 def submit_test(test_id):
@@ -131,8 +164,30 @@ def test_history():
     
     return render_template('test_history.html', tests=tests)
 
+@bp.route('/weekly_tests')
+def weekly_tests():
+    if 'student' not in session:
+        return redirect(url_for('main.login'))
+    student_name = session['student']
+    tests = AiTest.query.filter_by(
+        student_name=student_name, 
+        test_type='weekly', 
+        is_sent_to_student=True
+    ).order_by(AiTest.created_at.desc()).all()
+    return render_template('student_weekly_tests.html', tests=tests)
+
+@bp.route('/acknowledge_test/<int:test_id>', methods=['POST'])
+def acknowledge_test(test_id):
+    if 'student' not in session:
+        return redirect(url_for('main.login'))
+    test = AiTest.query.get_or_404(test_id)
+    if test.student_name == session['student']:
+        test.is_viewed_by_student = True
+        db.session.commit()
+        flash(f"「{test.title}」を確認しました。", "info")
+    return redirect(url_for('ai_test.weekly_tests'))
+
 # --- ★★★ ここが今回の修正箇所です ★★★ ---
-# 関数名を create_weekly_test_form から create_weekly_test に変更
 @bp.route('/admin/create_weekly', methods=['GET', 'POST'])
 def create_weekly_test():
     if 'admin' not in session:
@@ -147,6 +202,8 @@ def create_weekly_test():
         weak_points = request.form.get('weak_points')
         num_questions = request.form.get('num_questions')
         difficulty = request.form.get('difficulty')
+        q_type = request.form.get('q_type')
+        ans_type = request.form.get('ans_type')
 
         if not student_names:
             flash("対象の生徒を一人以上選択してください。", "error")
@@ -157,10 +214,33 @@ def create_weekly_test():
         タイトル: {title}
         主な内容: {content}
         特に強化したい苦手分野: {weak_points}
-        問題数は{num_questions}問、難易度は{difficulty}でお願いします。
+        問題数は{num_questions}問、難易度は{difficulty}、問題形式は{q_type}、解答形式は{ans_type}でお願いします。
         """
         
-        flash(f"{len(student_names)}人の生徒に「{title}」を配布しました（シミュレーション）", "success")
+        test_data_json = generate_test_from_ai_dummy(prompt, int(num_questions))
+        questions_data = json.loads(test_data_json)
+
+        for name in student_names:
+            new_test = AiTest(
+                student_name=name,
+                test_type='weekly',
+                title=title,
+                is_sent_to_student=False, # 最初は未送信状態
+                is_viewed_by_student=False
+            )
+            db.session.add(new_test)
+            db.session.flush()
+            for q_data in questions_data:
+                question = AiQuestion(
+                    test_id=new_test.id,
+                    question_text=q_data.get('question'),
+                    options=json.dumps(q_data.get('options', {})),
+                    correct_answer=q_data.get('correct_answer')
+                )
+                db.session.add(question)
+        
+        db.session.commit()
+        flash(f"{len(student_names)}人の生徒に「{title}」を作成しました。", "success")
         return redirect(url_for('admin.dashboard'))
 
     return render_template('create_weekly_test.html', students=all_students)

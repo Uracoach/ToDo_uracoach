@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}{{ student.name }}さんの週テスト履歴{% endblock %}
+{% block content %}
+    <h2>{{ student.name }}さんの週テスト履歴</h2>
+    <a href="{{ url_for('admin.dashboard') }}">ダッシュボードに戻る</a>
+    <table>
+        <thead>
+            <tr>
+                <th>作成日</th>
+                <th>タイトル</th>
+                <th>状態</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for test in tests %}
+            <tr>
+                <td>{{ test.created_at.strftime('%Y-%m-%d') }}</td>
+                <td>{{ test.title }}</td>
+                <td>
+                    {% if test.is_sent_to_student %}
+                        <span style="color: blue;">送信済み</span>
+                        {% if test.is_viewed_by_student %}
+                            <span style="color: green;">(生徒確認済み)</span>
+                        {% endif %}
+                    {% else %}
+                        未送信
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('admin.view_printable_test', test_id=test.id) }}" target="_blank">元の問題を表示</a>
+                    <hr>
+                    <form action="{{ url_for('admin.upload_and_send', test_id=test.id) }}" method="POST" enctype="multipart/form-data">
+                        <label for="pdf-{{ test.id }}" style="font-size:0.8em;">採点済みPDFを添付:</label>
+                        <input type="file" name="graded_pdf" id="pdf-{{ test.id }}" accept="application/pdf" required>
+                        <input type="submit" value="アップロードして送信" style="width: auto; padding: 5px; font-size: 0.8em; margin-top: 5px;">
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

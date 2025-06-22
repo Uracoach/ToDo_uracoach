@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ test.title }}</title>
+    <style>
+        body { 
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; 
+            line-height: 1.5;
+        }
+        .container { 
+            width: 95%; 
+            margin: auto; 
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid black;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .question-block { 
+            page-break-inside: avoid; 
+            margin-bottom: 2em; 
+        }
+        .options-list {
+            list-style-type: none;
+            padding-left: 2em;
+        }
+        .options-list li {
+            margin-bottom: 0.5em;
+        }
+        .print-button-container { 
+            text-align: center; 
+            margin-top: 2em; 
+        }
+
+        /* 印刷時用のスタイル */
+        @media print {
+            .no-print { 
+                display: none; 
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{{ test.title }}</h1>
+            <p style="text-align: right; margin-top: 2em;">氏名：__________________________</p>
+        </div>
+
+        {% for q in test.questions %}
+            <div class="question-block">
+                <p><strong>問{{ loop.index }}: {{ q.question_text }}</strong></p>
+                <ol type="A" class="options-list">
+                    {% set options = q.options | fromjson %}
+                    {% for key, value in options.items() %}
+                        <li>{{ value }}</li>
+                    {% endfor %}
+                </ol>
+            </div>
+        {% endfor %}
+
+        <div class="no-print print-button-container">
+            <button onclick="window.print()">このページを印刷する</button>
+        </div>
+    </div>
+</body>
+</html>

@@ -12,11 +12,16 @@ def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 def from_json(value):
-    return json.loads(value)
+    """Jinja2でJSON文字列を辞書に変換するためのフィルター"""
+    try:
+        return json.loads(value)
+    except (json.JSONDecodeError, TypeError):
+        return {}
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
 
+    # 本番環境(PythonAnywhereなど)とローカル環境でパスの解決方法を調整
     if 'INSTANCE_PATH' in os.environ:
         app.instance_path = os.environ['INSTANCE_PATH']
     elif not os.path.isabs(app.instance_path):
@@ -24,6 +29,9 @@ def create_app(test_config=None):
 
     db_path = os.path.join(app.instance_path, 'todo.db')
     
+    upload_folder = os.path.join(app.instance_path, 'uploads')
+
+    # デフォルトの設定
     app.config.from_mapping(
         SECRET_KEY=os.environ.get('SECRET_KEY', 'dev'),
         SQLALCHEMY_DATABASE_URI=f"sqlite:///{db_path}",
@@ -45,7 +53,8 @@ def create_app(test_config=None):
     # Jinja2にカスタムフィルターを登録
     app.jinja_env.filters['fromjson'] = from_json
 
-    from . import models, routes
+    from . import models
+    from . import routes
     app.register_blueprint(routes.main.bp)
     app.register_blueprint(routes.admin.bp)
     app.register_blueprint(routes.timer.bp)
